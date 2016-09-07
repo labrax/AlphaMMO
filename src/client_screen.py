@@ -64,16 +64,34 @@ class ClientScreen:
                     self.tiled_area.blit(elem, (ref_movement_x + (j - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN,
                                             ref_movement_y + (i - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
 
+        for i in client_states.entities.values():
+            pos_to_draw = (i.pos[0] - (client_states.map_center[0] - int(GRID_SIZE[0] / 2) - 2),
+                           i.pos[1] - (client_states.map_center[1] - int(GRID_SIZE[1] / 2) - 2))
+            if int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) - 2 <= pos_to_draw[1] < int((GRID_MEMORY_SIZE[1] + GRID_SIZE[1]) / 2) + 2:
+                if int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) - 2 <= pos_to_draw[0] < int((GRID_MEMORY_SIZE[0] + GRID_SIZE[0]) / 2) + 2:
+                    # check if it is moving and its fix
+                    entity_ref_movement_x = 0
+                    entity_ref_movement_y = 0
+
+                    if i.start_movement:
+                        this_time = time.time()
+                        if (this_time - i.start_movement) * i.speed_pixels > SPRITE_LEN:
+                            this_time = SPRITE_LEN / i.speed_pixels + i.start_movement
+
+                        diff_x = i.movement[0] - i.pos[0]
+                        diff_y = i.movement[1] - i.pos[1]
+
+                        if diff_x:
+                            entity_ref_movement_x = diff_x * (i.speed_pixels * (this_time - i.start_movement))
+                        if diff_y:
+                            entity_ref_movement_y = diff_y * (i.speed_pixels * (this_time - i.start_movement))
+
+                    self.tiled_area.blit(i.sprite, (ref_movement_x + entity_ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN, ref_movement_y + entity_ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+
+
         if client_states.player_character.sprite is not None:
             self.tiled_area.blit(client_states.player_character.sprite,
-                                 (
-                                     (int(GRID_SIZE[0] / 2)) * SPRITE_LEN,
-                                     (int(GRID_SIZE[1] / 2)) * SPRITE_LEN
-                                 )
-                                 )
-
-            # self.tiled_area.blit(client_states.player_character.sprite, (int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0] / 2) / 2 + 1) * SPRITE_LEN,
-            #                                int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1] / 2) / 2 + 1) * SPRITE_LEN))
+                                 ((int(GRID_SIZE[0] / 2)) * SPRITE_LEN, (int(GRID_SIZE[1] / 2)) * SPRITE_LEN))
 
         # draw to screen
         self.screen.blit(pygame.transform.scale(self.tiled_area, (int(size_x), int(size_y))), (pos_x, pos_y))

@@ -6,11 +6,13 @@ import time
 import pygame
 from pygame.locals import QUIT, VIDEORESIZE, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION
 
+import stackless
+
 from alpha_defines import FPS
 from client_states import ClientStates
 from client_screen import ClientScreen
 from client_input_handler import ClientInput
-from client_communication import AlphaCommunication, AlphaCommunicationChannel
+from alpha_communication import AlphaCommunication, AlphaCommunicationChannel
 
 
 from client_as_server import ClientAsServer
@@ -47,18 +49,16 @@ class AlphaGameClient:
         - main loop
         :return:
         """
-        pass
+        self.tasklets = [stackless.tasklet(self.run)(), stackless.tasklet(self.client_server.run)(),
+                         stackless.tasklet(self.client_communication.run)(), stackless.tasklet(self.client_states.run)()]
+        stackless.run()
 
     def run(self):
         running = True
 
         old_time = pygame.time.get_ticks()
         while running:
-            new_time = pygame.time.get_ticks()
-            waited = new_time - old_time
-            old_time = new_time
-            if waited < 60:
-                time.sleep(1.0 / (FPS - waited))
+            stackless.schedule()
 
             events = pygame.event.get()
             for event in events:
@@ -68,13 +68,22 @@ class AlphaGameClient:
                     self.client_screen.resize(event)
                 if event.type == QUIT:
                     running = False
-            self.client_states.run()
-            self.client_screen.render(self.client_states)
-            self.client_communication.run()
 
+            if self.client_states.ready:
+                self.client_screen.render(self.client_states)
+
+            new_time = pygame.time.get_ticks()
+            waited = new_time - old_time
+            old_time = new_time
+            if waited < 60:
+                time.sleep(1.0 / (FPS - waited))
+
+        self.client_states.running = False
+        self.client_communication.running = False
+        self.client_server.running = False
         pygame.quit()
 
 
 if __name__ == '__main__':
     gs = AlphaGameClient()
-    gs.run()
+    gs.start()

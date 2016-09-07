@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from client_entities import Entity as ServerEntity
+
 
 class Entity:
     def __init__(self, visual_element, name, handler):
@@ -17,3 +19,22 @@ class Entity:
 class Map(Entity):
     def __init__(self):
         super(Map, self).__init__()
+
+
+class ServerTile:
+    def __init__(self):
+        self.tile = None
+        self.decor_objects = list()
+        self.items = list()
+        self.entities = list()
+
+    def __iter__(self):
+        return self.iter()
+
+    def iter(self):
+        if self.tile:
+            yield self.tile
+        for i in self.decor_objects:
+            yield i
+        for i in self.items:
+            yield i

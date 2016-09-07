@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import time
-from data_structures import Tile
 
 
 class VisualElement:
@@ -26,9 +25,28 @@ class VisualElement:
             return self._sprites[int((time.time() - self.last_draw)*len(self._sprites)/self.animation_time)]
 
 
+class Tile:
+    def __init__(self):
+        self.tile = None
+        self.decor_objects = list()
+        self.items = list()
+
+    def __iter__(self):
+        return self.iter()
+
+    def iter(self):
+        if self.tile:
+            yield self.tile
+        for i in self.decor_objects:
+            yield i
+        for i in self.items:
+            yield i
+
+
 class Entity:
     def __init__(self):
-        self.speed_pixels = 16
+        self.entity_id = 1
+        self.speed_pixels = 16 * 5
         self.hp = (100, 100)
         self.mp = (50, 50)
         self.attack = 1
@@ -37,6 +55,7 @@ class Entity:
         self.movement = (6, 6)
         self.sprite = None
         self.start_movement = None
+        self.player_controlled = False
 
     def set_movement(self, delta_x, delta_y, immediate=False):
         self.movement = (self.movement[0] + delta_x, self.movement[1] + delta_y)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from queue import Queue
+import stackless
 
 
 class AlphaCommunicationMember:
@@ -26,7 +27,8 @@ class AlphaCommunication:
         self.channels.append(channel)
 
     def run(self):
-        #while self.running:
-        for i in self.channels:
-            while i.queue.qsize() > 0:
-                i.destination.notify(i.queue.get())
+        while self.running:
+            for i in self.channels:
+                while i.queue.qsize() > 0:
+                    i.destination.notify(i.queue.get())
+            stackless.schedule()
