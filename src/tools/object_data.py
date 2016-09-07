@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import pdb
-import pygame
 import os
-from resource_loader import AlphaResourceLoader, AlphaSprite, SPRITE_LEN
+import pdb
+
+import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
 
 from alpha_defines import ASSETS_DIR
+from util.resource_loader import AlphaResourceLoader, AlphaSprite, SPRITE_LEN
 
 black = (0, 0, 0)
 
@@ -14,10 +15,8 @@ TILE = 0
 MASK = 1000
 OBJECT = 2000
 
-
 CHARACTER = 10000
 CHARACTER_DETAIL = 15000
-
 
 
 if __name__ == '__main__':
