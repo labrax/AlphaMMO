@@ -8,7 +8,7 @@ transparent = (0, 0, 0, 0)
 ASSETS_DIR = 'assets/'
 SPRITE_LEN = 16
 GRID_SIZE = (11, 11)
-GRID_MEMORY_SIZE = (13, 13)
+GRID_MEMORY_SIZE = (15, 15)
 assert(int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) % 2 ) == 0)
 assert(int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) % 2 ) == 0)
 

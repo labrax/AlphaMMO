@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pdb
+import time
+
 
 import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
@@ -32,6 +34,21 @@ class ClientScreen:
         pos_x = self.current_size[0] / 2 - size_x / 2
         pos_y = self.current_size[1] / 2 - size_y / 2
 
+
+        ref_movement_x = 0
+        ref_movement_y = 0
+
+        # player position if in movement
+        if (client_states.player_character.start_movement):
+            this_time = time.time()
+            diff_x = client_states.player_character.movement[0] - client_states.player_character.pos[0]
+            diff_y = client_states.player_character.movement[1] - client_states.player_character.pos[1]
+
+            if diff_x:
+                ref_movement_x = -diff_x * (-SPRITE_LEN + client_states.player_character.speed_pixels * (this_time - client_states.player_character.start_movement))
+            if diff_y:
+                ref_movement_y = -diff_y * (-SPRITE_LEN + client_states.player_character.speed_pixels * (this_time - client_states.player_character.start_movement))
+
         # clear screen
         self.screen.fill(gray)
 
@@ -39,17 +56,24 @@ class ClientScreen:
         self.tiled_area.fill(transparent)
 
         # draw into 'main game tiled area'
-        for i in range(int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2),
-                       int(GRID_MEMORY_SIZE[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2)):
-            for j in range(int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2),
-                           int(GRID_MEMORY_SIZE[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2)):
+        for i in range(int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) - 2,
+                       int((GRID_MEMORY_SIZE[1] + GRID_SIZE[1]) / 2) + 2):
+            for j in range(int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) - 2,
+                           int((GRID_MEMORY_SIZE[0] + GRID_SIZE[0]) / 2) + 2):
                 for elem in client_states.tiled_memory[i][j]:
-                    self.tiled_area.blit(elem, ((j - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN,
-                                            (i - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+                    self.tiled_area.blit(elem, (ref_movement_x + (j - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN,
+                                            ref_movement_y + (i - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
 
         if client_states.player_character.sprite is not None:
-            self.tiled_area.blit(client_states.player_character.sprite, ((int(GRID_SIZE[0] / 2) + 1 - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN,
-                                            (int(GRID_SIZE[1] / 2) + 1 - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+            self.tiled_area.blit(client_states.player_character.sprite,
+                                 (
+                                     (int(GRID_SIZE[0] / 2)) * SPRITE_LEN,
+                                     (int(GRID_SIZE[1] / 2)) * SPRITE_LEN
+                                 )
+                                 )
+
+            # self.tiled_area.blit(client_states.player_character.sprite, (int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0] / 2) / 2 + 1) * SPRITE_LEN,
+            #                                int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1] / 2) / 2 + 1) * SPRITE_LEN))
 
         # draw to screen
         self.screen.blit(pygame.transform.scale(self.tiled_area, (int(size_x), int(size_y))), (pos_x, pos_y))

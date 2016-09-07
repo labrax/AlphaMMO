@@ -38,6 +38,8 @@ class AlphaGameClient:
         self.client_states.channel = channel_to_server
         self.client_server.channel = channel_to_states
 
+        self.client_states.start()
+
     def start(self):
         """
         starts all the tasklets for the game client
@@ -66,6 +68,7 @@ class AlphaGameClient:
                     self.client_screen.resize(event)
                 if event.type == QUIT:
                     running = False
+            self.client_states.run()
             self.client_screen.render(self.client_states)
             self.client_communication.run()
 

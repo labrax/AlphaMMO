@@ -28,13 +28,19 @@ class VisualElement:
 
 class Entity:
     def __init__(self):
-        self.pixels_speed = 16
-        self.max_hp = 100
-        self.hp = 100
-        self.max_mp = 50
-        self.mp = 50
+        self.speed_pixels = 16
+        self.hp = (100, 100)
+        self.mp = (50, 50)
         self.attack = 1
         self.defense = 1
-        self.pos_x = 6
-        self.pos_y = 6
+        self.pos = (6, 6)
+        self.movement = (6, 6)
         self.sprite = None
+        self.start_movement = None
+
+    def set_movement(self, delta_x, delta_y, immediate=False):
+        self.movement = (self.movement[0] + delta_x, self.movement[1] + delta_y)
+        if immediate:
+            self.start_movement = None
+        else:
+            self.start_movement = time.time()
