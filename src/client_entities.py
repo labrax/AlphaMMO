@@ -25,6 +25,21 @@ class VisualElement:
             return self._sprites[int((time.time() - self.last_draw)*len(self._sprites)/self.animation_time)]
 
 
+class EntityVisual:
+    def __init__(self):
+        self.skin = None
+        self.weapon = None
+        self.shield = None
+        self.helmet = None
+        self.armor = None
+        self.trousers = None
+        self.boots = None
+        self.compiled = None
+
+    def update(self):
+        pass
+
+
 class Tile:
     def __init__(self):
         self.tile = None
@@ -46,16 +61,17 @@ class Tile:
 class Entity:
     def __init__(self):
         self.entity_id = 1
-        self.speed_pixels = 16 * 5
-        self.hp = (100, 100)
-        self.mp = (50, 50)
+        self.speed_pixels = 16
+        self.hp = (50, 50)
+        self.mp = (0, 0)
         self.attack = 1
         self.defense = 1
         self.pos = (6, 6)
         self.movement = (6, 6)
-        self.sprite = None
+        self.sprite = EntityVisual()
         self.start_movement = None
         self.player_controlled = False
+        self.name = ''
 
     def set_movement(self, delta_x, delta_y, immediate=False):
         self.movement = (self.movement[0] + delta_x, self.movement[1] + delta_y)

@@ -15,7 +15,7 @@ from client_input_handler import ClientInput
 from alpha_communication import AlphaCommunication, AlphaCommunicationChannel
 
 
-from client_as_server import ClientAsServer
+from server_simple import ClientAsServer
 
 
 class AlphaGameClient:
