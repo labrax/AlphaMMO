@@ -42,6 +42,8 @@ class AlphaGameClient:
 
         self.client_states.start()
 
+        self.tasklets = None
+
     def start(self):
         """
         starts all the tasklets for the game client

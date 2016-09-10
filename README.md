@@ -21,10 +21,10 @@ Protocol:
   MAP: TILES...
 -------------------------------------------------------------------
 
-current:
 - table index - ok
 - entity name - ok
 - display entity name/text - ok
+- server_database - ok
 
 - separate hair from the helmet itens
 - other 'displays' (such as player itens and etc)

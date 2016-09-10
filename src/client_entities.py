@@ -27,18 +27,20 @@ class VisualElement:
 
 class EntityVisual:
     def __init__(self):
-        self.skin = None
-        self.weapon = None
-        self.shield = None
+        self.skin = 0
+        self.hair = 0
+        self.helmet = 0
+        self.shirt = 0
+        self.trousers = 0
+        self.boots = 0
 
-        self.hair = None
-        self.helmet = None
-        self.armor = None
-        self.trousers = None
-        self.boots = None
+        self.shield = 0
+        self.weapon = 0
+
         self.compiled = None
 
     def update(self):
+        #TODO: generate another compiled
         pass
 
 
@@ -64,13 +66,18 @@ class Entity:
     def __init__(self):
         self.entity_id = 1
         self.speed_pixels = 16
+
+        self.sprite = EntityVisual()
+        self.exp = 1
+
         self.hp = (50, 50)
         self.mp = (0, 0)
+
         self.attack = 1
         self.defense = 1
+
         self.pos = (6, 6)
         self.movement = (6, 6)
-        self.sprite = EntityVisual()
         self.start_movement = None
         self.player_controlled = False
         self.name = ''
