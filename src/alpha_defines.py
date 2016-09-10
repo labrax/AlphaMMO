@@ -9,9 +9,16 @@ ASSETS_DIR = 'assets/'
 SPRITE_LEN = 16
 GRID_SIZE = (11, 11)
 GRID_MEMORY_SIZE = (15, 15)
-assert(int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) % 2 ) == 0)
-assert(int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) % 2 ) == 0)
+assert(int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) % 2) == 0)
+assert(int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) % 2) == 0)
 
 START_RESOLUTION = (4 * SPRITE_LEN * GRID_SIZE[0], 4 * SPRITE_LEN * GRID_SIZE[1])
 
 FPS = 60
+version = 'almost 0.00001a'
+
+FONT_FILE = '04B_03__.TTF'
+FONT_SIZE = 32
+FONT_COLOR = (0, 0, 0)
+
+DRAW_PLAYERS_NAME = True

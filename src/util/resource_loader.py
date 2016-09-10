@@ -3,7 +3,7 @@
 import pygame
 
 from game_exceptions import AlphaException
-from alpha_defines import ASSETS_DIR, SPRITE_LEN
+from alpha_defines import ASSETS_DIR, SPRITE_LEN, FONT_FILE, FONT_SIZE
 
 
 class AlphaSprite:
@@ -48,6 +48,7 @@ class AlphaResourceAsset(AlphaSprite):
 class AlphaResourceLoader:
     def __init__(self):
         self.files_sprites = dict()
+        self.font = None
 
     def get_sprite(self, raw_file, x, y):
         file = ASSETS_DIR + raw_file
@@ -55,3 +56,10 @@ class AlphaResourceLoader:
             self.files_sprites[file] = AlphaResourceAsset().load_from_file(file)
 
         return self.files_sprites[file].get_sprite(x, y)
+
+    def get_font(self):
+        #return pygame.font.Font(None, FONT_SIZE)
+        if not self.font:
+            pygame.font.init()
+            self.font = pygame.font.Font(ASSETS_DIR + FONT_FILE, FONT_SIZE)
+        return self.font

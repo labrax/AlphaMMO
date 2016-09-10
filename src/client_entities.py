@@ -30,6 +30,8 @@ class EntityVisual:
         self.skin = None
         self.weapon = None
         self.shield = None
+
+        self.hair = None
         self.helmet = None
         self.armor = None
         self.trousers = None
@@ -72,6 +74,7 @@ class Entity:
         self.start_movement = None
         self.player_controlled = False
         self.name = ''
+        self.entity_name_surface = None
 
     def set_movement(self, delta_x, delta_y, immediate=False):
         self.movement = (self.movement[0] + delta_x, self.movement[1] + delta_y)

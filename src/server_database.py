@@ -19,8 +19,17 @@ class AlphaDatabase:
 
         self.conn = sqlite3.connect(DATABASE_FILE)
         # check if tables are k
-        self.conn.cursor().execute("CREATE TABLE IF NOT EXISTS users_login (account_id VARCHAR (16), password_hash VARCHAR (256), password_salt VARCHAR (256))")
-        self.conn.cursor().execute("CREATE TABLE IF NOT EXISTS characters (account_id VARCHAR (32), character_name VARCHAR (16), posx Int, posy Int, plevel Int, max_hp Int, curr_hp Int, max_mp Int, curr_mp Int, helmet Int, shirt Int, trousers Int, shield Int, weapon Int)")
+        self.conn.cursor().execute(
+            "CREATE TABLE IF NOT EXISTS users_login (account_id VARCHAR (16), password_hash VARCHAR (256), password_salt VARCHAR (256))")
+        self.conn.cursor().execute(
+            "CREATE TABLE IF NOT EXISTS characters (account_id VARCHAR (32), character_name VARCHAR (16), posx Int, posy Int, plevel Int, max_hp Int, curr_hp Int, max_mp Int, curr_mp Int, helmet Int, shirt Int, trousers Int, shield Int, weapon Int)")
+        try:
+            self.conn.cursor().execute(
+                "CREATE INDEX users_login_idx on users_login (account_id)")
+            self.conn.cursor().execute(
+                "CREATE INDEX characters_idx on characters (account_id)")
+        except:
+            print('Indexes already created.')
         self.conn.commit()
 
     def check_login(self, account_id, password_passed):

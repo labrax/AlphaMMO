@@ -3,7 +3,7 @@
 import stackless
 
 from client_entities import *
-from alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
+from alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE, FONT_COLOR
 from util.resource_loader import AlphaResourceLoader
 from alpha_communication import AlphaCommunicationMember
 
@@ -27,12 +27,16 @@ class ClientStates(AlphaCommunicationMember):
         self.running = True
         self.ready = False
 
+        self.texts_on_screen = list()
+
     def replace_entities(self, entities):
         self.entities = dict()
         for i in entities:
             self.add_entity(i)
 
     def add_entity(self, entity):
+        font = self.rl.get_font()
+        entity.entity_name_surface = font.render(entity.name, 1, FONT_COLOR)
         self.entities[entity.entity_id] = entity
 
     def remove_entity(self, entity):
@@ -44,9 +48,16 @@ class ClientStates(AlphaCommunicationMember):
     def run(self):
         # player position
         while self.running:
-            if (self.player_character.start_movement):
-                this_time = time.time()
+            # first check texts to be removed
+            texts_on_screen_to_be_removed_index = 0
+            for i in range(len(self.texts_on_screen)):
+                time_elapsed = time.time() - self.texts_on_screen[i][0]
+                if time_elapsed > 10:
+                    texts_on_screen_to_be_removed_index = i
+            self.texts_on_screen = self.texts_on_screen[texts_on_screen_to_be_removed_index:]
 
+            if self.player_character.start_movement:
+                this_time = time.time()
                 # movement is over
                 if self.player_character.speed_pixels * (
                     this_time - self.player_character.start_movement) > TILE_SIZE:
@@ -86,6 +97,11 @@ class ClientStates(AlphaCommunicationMember):
             self.player_character.set_movement(0, 0, immediate=True)
         elif message[0] == 'PLAYER':
             self.player_character = message[1]
+            font = self.rl.get_font()
+            self.player_character.entity_name_surface = font.render(message[1].name, 1, FONT_COLOR)
             self.ready = True
+        elif message[0] == 'SAY':
+            font = self.rl.get_font()
+            self.texts_on_screen.append((time.time(), font.render(message[2].name + ': ' + message[1], 1, FONT_COLOR), message[2]))
         else:
             print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)

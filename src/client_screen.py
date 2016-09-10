@@ -7,7 +7,7 @@ import time
 import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
 
-from alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, gray, transparent
+from alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, gray, transparent, version, FONT_COLOR, DRAW_PLAYERS_NAME
 
 
 class ClientScreen:
@@ -15,10 +15,12 @@ class ClientScreen:
         # start screen
         self.current_size = START_RESOLUTION
         self.screen = pygame.display.set_mode(self.current_size, HWSURFACE | DOUBLEBUF | RESIZABLE)
+        pygame.display.set_caption('AlphaMMO Client ' + str(version))
         pygame.display.flip()
 
         # initializes grid memory
         self.tiled_area = pygame.Surface((GRID_SIZE[0] * SPRITE_LEN, GRID_SIZE[1] * SPRITE_LEN), pygame.SRCALPHA)
+        self.players_and_texts = None # TODO
 
     def render(self, client_states):
         # prepare range to fit screen
@@ -34,12 +36,13 @@ class ClientScreen:
         pos_x = self.current_size[0] / 2 - size_x / 2
         pos_y = self.current_size[1] / 2 - size_y / 2
 
-
         ref_movement_x = 0
         ref_movement_y = 0
 
+        self.players_and_texts = pygame.Surface((size_x, size_y), pygame.SRCALPHA)
+
         # player position if in movement
-        if (client_states.player_character.start_movement):
+        if client_states.player_character.start_movement:
             this_time = time.time()
             diff_x = client_states.player_character.movement[0] - client_states.player_character.pos[0]
             diff_y = client_states.player_character.movement[1] - client_states.player_character.pos[1]
@@ -64,6 +67,38 @@ class ClientScreen:
                     self.tiled_area.blit(elem, (ref_movement_x + (j - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN,
                                             ref_movement_y + (i - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
 
+        '''
+        for i in client_states.entities.values():
+            pos_to_draw = (i.pos[0] - (client_states.map_center[0] - int(GRID_SIZE[0] / 2) - 2),
+                           i.pos[1] - (client_states.map_center[1] - int(GRID_SIZE[1] / 2) - 2))
+            if int((GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) - 2 <= pos_to_draw[1] < int((GRID_MEMORY_SIZE[1] + GRID_SIZE[1]) / 2) + 2:
+                if int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) - 2 <= pos_to_draw[0] < int((GRID_MEMORY_SIZE[0] + GRID_SIZE[0]) / 2) + 2:
+                    # check if it is moving and its fix
+                    entity_ref_movement_x = 0
+                    entity_ref_movement_y = 0
+
+                    if i.start_movement:
+                        this_time = time.time()
+                        if (this_time - i.start_movement) * i.speed_pixels > SPRITE_LEN:
+                            this_time = SPRITE_LEN / i.speed_pixels + i.start_movement
+
+                        diff_x = i.movement[0] - i.pos[0]
+                        diff_y = i.movement[1] - i.pos[1]
+
+                        if diff_x:
+                            entity_ref_movement_x = diff_x * (i.speed_pixels * (this_time - i.start_movement))
+                        if diff_y:
+                            entity_ref_movement_y = diff_y * (i.speed_pixels * (this_time - i.start_movement))
+                    self.tiled_area.blit(i.sprite, (ref_movement_x + entity_ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN, ref_movement_y + entity_ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+                    #self.tiled_area.blit(i.entity_name_surface, (-i.entity_name_surface.get_width()/2 + SPRITE_LEN/2 + ref_movement_x + entity_ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN, -SPRITE_LEN/2 + ref_movement_y + entity_ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+        '''
+
+        if client_states.player_character.sprite:
+            self.tiled_area.blit(client_states.player_character.sprite,
+                                 ((int(GRID_SIZE[0] / 2)) * SPRITE_LEN, (int(GRID_SIZE[1] / 2)) * SPRITE_LEN))
+
+        # redraw text
+        factor = size_x/self.tiled_area.get_width()
         for i in client_states.entities.values():
             pos_to_draw = (i.pos[0] - (client_states.map_center[0] - int(GRID_SIZE[0] / 2) - 2),
                            i.pos[1] - (client_states.map_center[1] - int(GRID_SIZE[1] / 2) - 2))
@@ -86,15 +121,27 @@ class ClientScreen:
                         if diff_y:
                             entity_ref_movement_y = diff_y * (i.speed_pixels * (this_time - i.start_movement))
 
-                    self.tiled_area.blit(i.sprite, (ref_movement_x + entity_ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN, ref_movement_y + entity_ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+                    self.players_and_texts.blit(pygame.transform.scale(i.sprite, (int(SPRITE_LEN * factor), int(SPRITE_LEN * factor))),
+                                         (factor * (ref_movement_x + entity_ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN),
+                                         factor * (ref_movement_y + entity_ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN)))
+                    if DRAW_PLAYERS_NAME:
+                        self.players_and_texts.blit(i.entity_name_surface,
+                                                (- i.entity_name_surface.get_width() / 2 + factor * (SPRITE_LEN / 2 + ref_movement_x + entity_ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN),
+                                                 - i.entity_name_surface.get_height() / 2 + factor * (-1 + ref_movement_y + entity_ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN)))
 
+        if client_states.player_character.entity_name_surface and DRAW_PLAYERS_NAME:
+            self.players_and_texts.blit(client_states.player_character.entity_name_surface, (- client_states.player_character.entity_name_surface.get_width() / 2 + factor * (SPRITE_LEN / 2 + (int(GRID_SIZE[0] / 2)) * SPRITE_LEN), - client_states.player_character.entity_name_surface.get_height() / 2 + factor * (-1 + (int(GRID_SIZE[1] / 2)) * SPRITE_LEN)))
 
-        if client_states.player_character.sprite is not None:
-            self.tiled_area.blit(client_states.player_character.sprite,
-                                 ((int(GRID_SIZE[0] / 2)) * SPRITE_LEN, (int(GRID_SIZE[1] / 2)) * SPRITE_LEN))
-
-        # draw to screen
+        # draw tiles to screen
         self.screen.blit(pygame.transform.scale(self.tiled_area, (int(size_x), int(size_y))), (pos_x, pos_y))
+
+        for i in range(len(client_states.texts_on_screen)):
+            message = client_states.texts_on_screen[i][1]
+            entity = client_states.texts_on_screen[i][2]
+            self.screen.blit(message, (0, message.get_height()*i))
+
+        # draw players and texts to screen
+        self.screen.blit(self.players_and_texts, (pos_x, pos_y))
 
         # flip buffer
         pygame.display.flip()

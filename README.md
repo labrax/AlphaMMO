@@ -20,3 +20,18 @@ Protocol:
   MOVE
   MAP: TILES...
 -------------------------------------------------------------------
+
+current:
+- table index - ok
+- entity name - ok
+- display entity name/text - ok
+
+- separate hair from the helmet itens
+- other 'displays' (such as player itens and etc)
+- itens id
+- itens on the floor
+- server's ai
+- players movement (and invalid pos)
+
+future:
+- actionable scripts (on position, etc)
