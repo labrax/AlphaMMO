@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import time
 import random
 import stackless
+import time
 
-
-from alpha_communication import AlphaCommunicationMember
+from server_util.server_entities import ServerTile as Tile
+from util.alpha_communication import AlphaCommunicationMember
+from util.alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
+from util.alpha_entities import Entity as ServerEntity
 from util.resource_loader import AlphaResourceLoader
-from server_entities import ServerTile as Tile, ServerEntity
-from alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
 
 
 class ClientAsServer(AlphaCommunicationMember):

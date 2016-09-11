@@ -3,26 +3,22 @@
 import time
 
 
-class VisualElement:
-    def __init__(self, sprites, animation_time):
-        """
-        initiates a visual element for an entity
-        :param sprites: a list or a single sprite
-        :param animation_time: the duration of an animation (if it is one)
-        """
-        self._sprites = sprites
-        self.last_draw = None
-        self.animation_time = animation_time
+class Tile:
+    def __init__(self):
+        self.tile = None
+        self.decor_objects = list()
+        self.items = list()
 
-    def get_sprite(self):
-        if type(self._sprites) is not list:
-            return self._sprites
+    def __iter__(self):
+        return self.iter()
 
-        if not self.last_draw:
-            return self._sprites[0]
-        else:
-            self.last_draw = time.time()
-            return self._sprites[int((time.time() - self.last_draw)*len(self._sprites)/self.animation_time)]
+    def iter(self):
+        if self.tile:
+            yield self.tile
+        for i in self.decor_objects:
+            yield i
+        for i in self.items:
+            yield i
 
 
 class EntityVisual:
@@ -42,24 +38,6 @@ class EntityVisual:
     def update(self):
         #TODO: generate another compiled
         pass
-
-
-class Tile:
-    def __init__(self):
-        self.tile = None
-        self.decor_objects = list()
-        self.items = list()
-
-    def __iter__(self):
-        return self.iter()
-
-    def iter(self):
-        if self.tile:
-            yield self.tile
-        for i in self.decor_objects:
-            yield i
-        for i in self.items:
-            yield i
 
 
 class Entity:

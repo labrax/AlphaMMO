@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from game_exceptions import InvalidCharacters, InvalidLogin, InvalidPassword, InvalidValue
-from server_database import AlphaDatabase
+
+from server_util.server_database import AlphaDatabase
+from util.game_exceptions import InvalidCharacters, InvalidLogin, InvalidPassword, InvalidValue
 
 
 class TestDatabase(unittest.TestCase):

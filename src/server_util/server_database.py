@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sqlite3
 import crypt
+import os
 import pdb
+import sqlite3
 import time
 
-from alpha_server_defines import DATABASE_FILE
-from game_exceptions import InvalidCharacters, InvalidLogin, InvalidPassword, InvalidValue
+from server_util.alpha_server_defines import DATABASE_FILE
+from util.game_exceptions import InvalidCharacters, InvalidLogin, InvalidPassword, InvalidValue
 
 
 class AlphaDatabase:

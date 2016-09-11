@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from alpha_communication import AlphaCommunicationMember
+from util.alpha_communication import AlphaCommunicationMember
 
 
 class AlphaServerPlayerHandler(AlphaCommunicationMember):

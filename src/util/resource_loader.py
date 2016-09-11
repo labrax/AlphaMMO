@@ -2,8 +2,8 @@
 
 import pygame
 
-from game_exceptions import AlphaException
-from alpha_defines import ASSETS_DIR, SPRITE_LEN, FONT_FILE, FONT_SIZE
+from util.alpha_defines import ASSETS_DIR, SPRITE_LEN, FONT_FILE, FONT_SIZE
+from util.game_exceptions import AlphaException
 
 
 class AlphaSprite:

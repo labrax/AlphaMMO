@@ -6,7 +6,7 @@ import pdb
 import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
 
-from alpha_defines import ASSETS_DIR
+from util.alpha_defines import ASSETS_DIR
 from util.resource_loader import AlphaResourceLoader, AlphaSprite, SPRITE_LEN
 
 black = (0, 0, 0)

@@ -1,21 +1,18 @@
 #!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
+import stackless
 import time
 
 import pygame
 from pygame.locals import QUIT, VIDEORESIZE, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION
 
-import stackless
-
-from alpha_defines import FPS
-from client_states import ClientStates
-from client_screen import ClientScreen
-from client_input_handler import ClientInput
-from alpha_communication import AlphaCommunication, AlphaCommunicationChannel
-
-
+from client_util.client_input_handler import ClientInput
+from client_util.client_screen import ClientScreen
+from client_util.client_states import ClientStates
 from server_simple import ClientAsServer
+from util.alpha_communication import AlphaCommunication, AlphaCommunicationChannel
+from util.alpha_defines import FPS
 
 
 class AlphaGameClient:

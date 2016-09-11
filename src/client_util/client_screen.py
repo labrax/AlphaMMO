@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import pdb
 import time
-
 
 import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
 
-from alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, gray, transparent, version, FONT_COLOR, DRAW_PLAYERS_NAME
+from util.alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, gray, transparent, version, \
+    DRAW_PLAYERS_NAME
 
 
 class ClientScreen:

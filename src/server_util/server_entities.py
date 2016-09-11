@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from client_entities import Entity as ServerEntity
 
-
+'''
 class Entity:
     def __init__(self, visual_element, name, handler):
         """
@@ -19,6 +18,7 @@ class Entity:
 class Map(Entity):
     def __init__(self):
         super(Map, self).__init__()
+'''
 
 
 class ServerTile:

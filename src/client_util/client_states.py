@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import stackless
+import time
 
-from client_entities import *
-from alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE, FONT_COLOR
+from util.alpha_communication import AlphaCommunicationMember
+from util.alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE, FONT_COLOR
+from util.alpha_entities import Tile
 from util.resource_loader import AlphaResourceLoader
-from alpha_communication import AlphaCommunicationMember
 
 
 class ClientStates(AlphaCommunicationMember):
