@@ -10,6 +10,7 @@ from pygame.locals import QUIT, VIDEORESIZE, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MO
 from client_util.client_input_handler import ClientInput
 from client_util.client_screen import ClientScreen
 from client_util.client_states import ClientStates
+from client_util.client_socket import AlphaClientSocket
 from server_simple import ClientAsServer
 from util.alpha_communication import AlphaCommunication, AlphaCommunicationChannel
 from util.alpha_defines import FPS
@@ -25,17 +26,19 @@ class AlphaGameClient:
         # input
         self.client_input = ClientInput()
         # dummy server
-        self.client_server = ClientAsServer()
+        self.client_socket = AlphaClientSocket(self.client_states)
+        # self.client_server = ClientAsServer()  ###
         # communication
         self.client_communication = AlphaCommunication()
-        channel_to_server = AlphaCommunicationChannel(self.client_server)
+        # channel_to_server = AlphaCommunicationChannel(self.client_server)  ###
+        channel_to_server = AlphaCommunicationChannel(self.client_socket)
         self.client_communication.add(channel_to_server)
         channel_to_states = AlphaCommunicationChannel(self.client_states)
         self.client_communication.add(channel_to_states)
 
         self.client_input.channel = channel_to_states
         self.client_states.channel = channel_to_server
-        self.client_server.channel = channel_to_states
+        # self.client_server.channel = channel_to_states  ###
 
         self.client_states.start()
 
@@ -48,7 +51,7 @@ class AlphaGameClient:
         - main loop
         :return:
         """
-        self.tasklets = [stackless.tasklet(self.run)(), stackless.tasklet(self.client_server.run)(),
+        self.tasklets = [stackless.tasklet(self.run)(), stackless.tasklet(self.client_socket.run)(),  #self.client_server.run
                          stackless.tasklet(self.client_communication.run)(), stackless.tasklet(self.client_states.run)()]
         stackless.run()
 
@@ -79,7 +82,8 @@ class AlphaGameClient:
 
         self.client_states.running = False
         self.client_communication.running = False
-        self.client_server.running = False
+        # self.client_server.running = False
+        self.client_socket.running = False
         pygame.quit()
 
 

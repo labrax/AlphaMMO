@@ -30,3 +30,7 @@ class InvalidValue(DatabaseException):
     def __init__(self, content):
         super(InvalidValue, self).__init__(content)
 
+
+class SingletonViolated(AlphaException):
+    def __init__(self, content):
+        super(SingletonViolated, self).__init__(content)

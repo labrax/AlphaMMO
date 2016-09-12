@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
-class GameData:
+class AlphaGameData:
     def __init__(self):
         pass
 
 
-class CharGameData(GameData):
+class AlphaCharGameData(AlphaGameData):
     def __init__(self):
+        super(AlphaCharGameData, self).__init__()
         self.file = 'roguelikeChar_transparent.png'
 
         self.skins = [(0, 0), (0, 1), (0, 2), (0, 3)]

@@ -39,6 +39,15 @@ https://docs.python.org/3/library/ssl.html
 https://docs.python.org/3/library/pickle.html
 -------------------------------------------------------------------
 
+Generate certificate:
+-------------------------------------------------------------------
+openssl genrsa -des3 -out server.orig.key 2048
+openssl rsa -in server.orig.key -out server.key
+openssl req -new -key server.key -out server.csr
+openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+-------------------------------------------------------------------
+message ===> len(message) + ' ' + pickle_message
+-------------------------------------------------------------------
 - separate hair from the helmet itens
 - other windows (player itens, backpack, text and status)
 - itens id

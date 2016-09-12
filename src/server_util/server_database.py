@@ -7,7 +7,7 @@ import sqlite3
 import time
 
 from server_util.alpha_server_defines import DATABASE_FILE
-from util.game_exceptions import InvalidCharacters, InvalidLogin, InvalidPassword, InvalidValue
+from util.alpha_exceptions import InvalidCharacters, InvalidLogin, InvalidPassword, InvalidValue
 
 
 class AlphaDatabase:

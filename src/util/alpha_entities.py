@@ -8,6 +8,7 @@ class Tile:
         self.tile = None
         self.decor_objects = list()
         self.items = list()
+        self.entities = list()
 
     def __iter__(self):
         return self.iter()
@@ -19,6 +20,14 @@ class Tile:
             yield i
         for i in self.items:
             yield i
+
+    def load(self, resource_loader):
+        if self.tile:
+            self.tile = resource_loader.get_sprite(self.tile[0], self.tile[1], self.tile[2])
+        for i in range(len(self.decor_objects)):
+            self.decor_objects[i] = resource_loader.get_sprite(self.decor_objects[i][0], self.decor_objects[i][1], self.decor_objects[i][2])
+        for i in range(len(self.items)):
+            self.items[i] = resource_loader.get_sprite(self.items[i][0], self.items[i][1], self.items[i][2])
 
 
 class EntityVisual:
@@ -67,3 +76,6 @@ class Entity:
             self.start_movement = None
         else:
             self.start_movement = time.time()
+
+    def load(self, resource_loader):
+        self.sprite = resource_loader.get_sprite(self.sprite[0], self.sprite[1], self.sprite[2])

@@ -4,11 +4,11 @@ import random
 import stackless
 import time
 
-from server_util.server_entities import ServerTile as Tile
+from util.alpha_entities import Tile
 from util.alpha_communication import AlphaCommunicationMember
 from util.alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
 from util.alpha_entities import Entity as ServerEntity
-from util.resource_loader import AlphaResourceLoader
+from util.alpha_resource_loader import AlphaResourceLoader
 
 
 class ClientAsServer(AlphaCommunicationMember):
