@@ -50,14 +50,13 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
         p0 = ServerEntity()
         p0.pos = (6, 6)
         p0.sprite = ('roguelikeChar_transparent.png', 0, 8)
-        p0.entity_id = 1
+        p0.entity_id = 0
         p0.speed_pixels = 16 * 5
         p0.player_controlled = True
         p0.name = "It's me"
         self.entity = p0
         AlphaServer.__instance__.set_tasklet(self.entity.entity_id, self)
-        AlphaServer.__instance__.server_map.all_entities[self.entity.entity_id] = p0
-        AlphaServer.__instance__.server_map.tiled_memory[p0.pos[1]][p0.pos[0]].entities.append(p0)
+        AlphaServer.__instance__.server_map.add_player(self.entity)
 
     def run(self):
         while self.running:
@@ -105,6 +104,7 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                 self.running = False
             stackless.schedule()
         self.client_socket.close()
+        AlphaServer.__instance__.server_map.remove_player(self.entity)
         # this way when we lose connection to the server the player gets disconnected
         stackless.schedule_remove()
 
@@ -235,7 +235,9 @@ class AlphaServer:
         stackless.run()
 
     def run(self):
+        ITERATION_TIME = 1/60
         while self.running:
+            last_time = time.time()
             rr, rw, err = select.select([self.server_socket], list(), list(), 0)
 
             # we have a client connecting
@@ -250,6 +252,9 @@ class AlphaServer:
                 tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
 
             stackless.schedule()
+            elapsed = time.time() - last_time
+            if elapsed < ITERATION_TIME:
+                time.sleep(ITERATION_TIME - elapsed)
 
         self.server_socket.close()
 

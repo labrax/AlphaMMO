@@ -67,3 +67,11 @@ class AlphaServerMap:
                         if elem is not curr_entity:
                             ret_entities.append(elem)
         return ret_entities
+
+    def add_player(self, entity):
+        self.all_entities[entity.entity_id] = entity
+        self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.append(entity)
+
+    def remove_player(self, entity):
+        self.all_entities.pop(entity.entity_id)
+        self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.remove(entity)

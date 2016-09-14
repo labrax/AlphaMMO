@@ -40,8 +40,6 @@ class AlphaGameClient:
         self.client_states.channel = channel_to_server
         # self.client_server.channel = channel_to_states  ###
 
-        self.client_states.start()
-
         self.tasklets = None
 
     def start(self):
@@ -71,8 +69,7 @@ class AlphaGameClient:
                 if event.type == QUIT:
                     running = False
 
-            if self.client_states.ready:
-                self.client_screen.render(self.client_states)
+            self.client_screen.render(self.client_states)
 
             new_time = pygame.time.get_ticks()
             waited = new_time - old_time

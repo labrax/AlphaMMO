@@ -12,15 +12,49 @@ from util.alpha_resource_loader import AlphaResourceLoader
 class ClientStates(AlphaCommunicationMember):
     def __init__(self):
         # server token
-        self.session_token = 1
+        self.session_id = None  # TODO: use later?
+        self.running = True
+        self.mode = AlphaLoginMode()
 
+        self.channel = None
+        self.logged = False
+
+    def run(self):
+        while self.running:
+            self.mode.iterate()
+            stackless.schedule()
+
+    def notify(self, message):
+        self.mode.notify(message, self)
+
+
+class AlphaLoginMode:
+    def __init__(self):
+        pass
+
+    def notify(self, message, caller):
+        if message[0] == 'KEY' and message[1] == 'ENTER':
+            caller.logged = True
+            caller.mode = AlphaPlayMode()
+            caller.channel.push([0, 'START'])
+
+    def iterate(self):
+        pass
+
+    def ok(self):
+        print('ok')
+
+    def cancel(self):
+        print('cancel')
+
+
+class AlphaPlayMode:
+    def __init__(self):
         # player and game information
         self.player_character = None
         self.tiled_memory = [[Tile() for _2 in range(GRID_MEMORY_SIZE[0])] for _ in range(GRID_MEMORY_SIZE[1])]
         self.map_center = None
         self.entities = dict()
-
-        self.channel = None
 
         # resource loader starter
         self.rl = AlphaResourceLoader()
@@ -39,6 +73,7 @@ class ClientStates(AlphaCommunicationMember):
             self.add_entity(i)
 
     def add_entity(self, entity):
+        # TODO: move code?
         font = self.rl.get_font()
         entity.entity_name_surface = font.render(entity.name, 1, FONT_COLOR)
         entity.load(self.rl)
@@ -47,43 +82,37 @@ class ClientStates(AlphaCommunicationMember):
     def remove_entity(self, entity):
         self.entities.pop(entity.entity_id)
 
-    def start(self):
-        self.channel.push([self.session_token, 'START'])
+    def iterate(self):
+        if self.ready:
+            # first check texts to be removed
+            texts_on_screen_to_be_removed_index = 0
+            for i in range(len(self.texts_on_screen)):
+                time_elapsed = time.time() - self.texts_on_screen[i][0]
+                if time_elapsed > 10:
+                    texts_on_screen_to_be_removed_index = i
+            self.texts_on_screen = self.texts_on_screen[texts_on_screen_to_be_removed_index:]
 
-    def run(self):
-        # player position
-        while self.running:
-            if self.ready:
-                # first check texts to be removed
-                texts_on_screen_to_be_removed_index = 0
-                for i in range(len(self.texts_on_screen)):
-                    time_elapsed = time.time() - self.texts_on_screen[i][0]
-                    if time_elapsed > 10:
-                        texts_on_screen_to_be_removed_index = i
-                self.texts_on_screen = self.texts_on_screen[texts_on_screen_to_be_removed_index:]
+            if self.player_character.start_movement:
+                this_time = time.time()
+                # movement is over
+                if self.player_character.speed_pixels * (
+                    this_time - self.player_character.start_movement) > TILE_SIZE:
+                    self.player_character.pos = (
+                    self.player_character.movement[0], self.player_character.movement[1])
+                    self.player_character.start_movement = None
 
-                if self.player_character.start_movement:
-                    this_time = time.time()
-                    # movement is over
-                    if self.player_character.speed_pixels * (
-                        this_time - self.player_character.start_movement) > TILE_SIZE:
-                        self.player_character.pos = (
-                        self.player_character.movement[0], self.player_character.movement[1])
-                        self.player_character.start_movement = None
-            stackless.schedule()
-
-    def notify(self, message):
+    def notify(self, message, caller):
         # print("States received", message)
         if message[0] == 'KEY':
             if message[1] in ['LEFT', 'RIGHT', 'UP', 'DOWN'] and self.player_character.start_movement is None:
                 if message[1] == 'LEFT':
-                    self.channel.push([self.session_token, 'MAP', self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                    caller.channel.push([0, 'MAP', self.player_character.pos[0] - 1, self.player_character.pos[1]])
                 elif message[1] == 'RIGHT':
-                    self.channel.push([self.session_token, 'MAP', self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                    caller.channel.push([0, 'MAP', self.player_character.pos[0] + 1, self.player_character.pos[1]])
                 elif message[1] == 'UP':
-                    self.channel.push([self.session_token, 'MAP', self.player_character.pos[0], self.player_character.pos[1] - 1])
+                    caller.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] - 1])
                 elif message[1] == 'DOWN':
-                    self.channel.push([self.session_token, 'MAP', self.player_character.pos[0], self.player_character.pos[1] + 1])
+                    caller.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] + 1])
         elif message[0] == 'ADD_ENTITIES':
             for i in message[1]:
                 self.add_entity(i)

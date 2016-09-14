@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 black = (0, 0, 0)
-gray = (104, 104, 104)
+gray = (94, 94, 94)
 white = (255, 255, 255)
 transparent = (0, 0, 0, 0)
 

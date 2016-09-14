@@ -8,6 +8,8 @@ from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
 from util.alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, gray, transparent, version, \
     DRAW_PLAYERS_NAME
 
+from client_util.client_ui import AlphaWindow, AlphaLabel, AlphaEditBox, AlphaButton
+
 
 class ClientScreen:
     def __init__(self):
@@ -17,15 +19,32 @@ class ClientScreen:
         pygame.display.set_caption('AlphaMMO Client ' + str(version))
         pygame.display.flip()
 
+        # login information memory
+        self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 4), "LOGIN")
+        al = AlphaLabel((3, 29), (120, 24), 'Account:')
+        al2 = AlphaLabel((3, 29 * 2), (160, 24), 'Password:')
+        ae = AlphaEditBox((3 + 150, 29), (145, 24), '')
+        ae2 = AlphaEditBox((3 + 150, 29 * 2), (145, 24), '')
+
+        ab = AlphaButton((0, 29 * 3), (150, 29), 'CANCEL', callback=print, callback_args=('cancel',))
+        ab2 = AlphaButton((150, 29 * 3), (149, 29), 'OK', callback=print, callback_args=('ok',))
+        self.aw.add_component([al, al2, ae, ae2, ab, ab2])
+        #
+
         # initializes grid memory
         self.tiled_area = pygame.Surface((GRID_SIZE[0] * SPRITE_LEN, GRID_SIZE[1] * SPRITE_LEN), pygame.SRCALPHA)
         self.players_and_texts = None # TODO
-
         self.size = None
         self.pos = None
         self.prepare()
+        #
 
     def prepare(self):
+        # login screen
+        self.aw.pos = ((self.current_size[0] - self.aw.size[0]) / 2, (self.current_size[1] - self.aw.size[1]) / 2)
+        self.aw.update()
+        #
+
         # prepare range to fit screen
         ## get the smallest side fitting
         tiles_at = (self.current_size[0] / SPRITE_LEN, self.current_size[1] / SPRITE_LEN)
@@ -40,7 +59,26 @@ class ClientScreen:
         # surface updated when resizing
         self.players_and_texts = pygame.Surface((self.size[0], self.size[1]), pygame.SRCALPHA)
 
+    def render_ui(self, client_states):
+        pass
+
     def render(self, client_states):
+        # clear screen
+        self.screen.fill(gray)
+
+        # draw current state
+        if not client_states.logged:
+            self.render_pregame(client_states.mode)
+        elif client_states.mode.ready:
+            self.render_game(client_states.mode)
+
+        # flip buffer (display it)
+        pygame.display.flip()
+
+    def render_pregame(self, client_states):
+        self.aw.render(self.screen)
+
+    def render_game(self, client_states):
         # player position if in movement
         ref_movement_x = 0
         ref_movement_y = 0
@@ -59,9 +97,6 @@ class ClientScreen:
                 ref_movement_x = -diff[0] * space_walked
             if diff[1]:
                 ref_movement_y = -diff[1] * space_walked
-
-        # clear screen
-        self.screen.fill(gray)
 
         # clear temporary areas
         self.tiled_area.fill(transparent)
@@ -137,9 +172,6 @@ class ClientScreen:
 
         # draw players and texts to screen (from the temporary surface)
         self.screen.blit(self.players_and_texts, (self.pos[0], self.pos[1]))
-
-        # flip buffer (display it)
-        pygame.display.flip()
 
     def resize(self, event):
         self.current_size = event.dict['size']

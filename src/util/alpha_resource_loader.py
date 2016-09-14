@@ -19,6 +19,15 @@ class AlphaSprite:
     def load_from_memory(self, image):
         self.image = image
 
+    def load_from_file(self, file):
+        # http://www.pygame.org/docs/tut/chimp/ChimpLineByLine.html
+        try:
+            self.image = pygame.image.load(file)
+        except pygame.error:
+            print('Cannot load file for sprite:', file)
+            raise AlphaException('Cannot load file')
+        return self
+
 
 class AlphaResourceAsset(AlphaSprite):
     def __init__(self, image=None, file=None):
@@ -35,15 +44,6 @@ class AlphaResourceAsset(AlphaSprite):
         self.file_sprites[(x, y)] = reply
         return reply
 
-    def load_from_file(self, file):
-        # http://www.pygame.org/docs/tut/chimp/ChimpLineByLine.html
-        try:
-            self.image = pygame.image.load(file)
-        except pygame.error:
-            print('Cannot load file for sprite:', file)
-            raise AlphaException('Cannot load file')
-        return self
-
 
 class AlphaResourceLoader:
     def __init__(self):
@@ -57,9 +57,8 @@ class AlphaResourceLoader:
 
         return self.files_sprites[file].get_sprite(x, y)
 
-    def get_font(self):
-        #return pygame.font.Font(None, FONT_SIZE)
+    def get_font(self, fontfile=ASSETS_DIR + FONT_FILE, fontsize=FONT_SIZE):
         if not self.font:
             pygame.font.init()
-            self.font = pygame.font.Font(ASSETS_DIR + FONT_FILE, FONT_SIZE)
+            self.font = pygame.font.Font(fontfile, fontsize)
         return self.font
