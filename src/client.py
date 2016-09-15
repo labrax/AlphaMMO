@@ -66,6 +66,7 @@ class AlphaGameClient:
                     self.client_input.handle(event)
                 if event.type == VIDEORESIZE:
                     self.client_screen.resize(event)
+                    self.client_states.resize(event)
                 if event.type == QUIT:
                     running = False
 

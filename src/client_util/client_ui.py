@@ -89,6 +89,10 @@ class AlphaEditBox(AlphaLabel):
         font_surface = LABEL_FONT.render(self.text, 1, EDITBOX_COLOR)
         self.surface.blit(font_surface, (2, 2))
 
+    def notify(self, event):
+        # todo: add text
+        pass
+
 
 class AlphaButton(AlphaLabel):
     def __init__(self, pos, size, text, callback, callback_args=None):
@@ -101,5 +105,6 @@ class AlphaButton(AlphaLabel):
         pygame.draw.rect(self.surface, BUTTON_BORDER, pygame.Rect((1, 1), (self.size[0] - 1, self.size[1] - 1)), 1)
         self.surface.blit(font_surface, ((self.size[0] - font_surface.get_width()) / 2, (self.size[1] - font_surface.get_height()) / 2))
 
-    def notify(self):
+    def notify(self, event):
+        # todo: check if is return/enter/space/button click in the button area
         self.callback(*self.callback_args)

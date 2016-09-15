@@ -1,0 +1,6 @@
+.idea/
+__pycache__
+server.crt
+server.csr
+server.key
+server.orig.key
