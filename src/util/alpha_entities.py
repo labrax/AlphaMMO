@@ -8,7 +8,7 @@ class Tile:
         self.tile = None
         self.decor_objects = list()
         self.items = list()
-        self.entities = list()
+        self.entities = set()
 
     def __iter__(self):
         return self.iter()
@@ -51,7 +51,7 @@ class EntityVisual:
 
 class Entity:
     def __init__(self):
-        self.entity_id = 1
+        self.entity_id = -1
         self.speed_pixels = 16
 
         self.sprite = EntityVisual()

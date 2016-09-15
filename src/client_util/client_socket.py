@@ -35,7 +35,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
         self.started = True
 
     def to_client(self, message):
-        print("To client", message)
+        # print("To client", message)
         self.client_states.notify(message)
 
     # message to server
@@ -80,7 +80,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
                     self.started = False
             try:
                 while self.queue.qsize() > 0:
-                    data = pickle.dumps(self.queue.get())
+                    data = b' '.join([str(i).encode() for i in self.queue.get()])
                     # print("Socket sending", data)
                     self.server_socket.send(str(len(data)).encode() + b' ' + data)
             except Exception as e:

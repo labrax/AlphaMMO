@@ -20,7 +20,7 @@ class ClientStates(AlphaCommunicationMember):
         # server token
         self.session_id = None  # TODO: use later?
         self.running = True
-        self.mode = AlphaLoginMode(START_RESOLUTION)
+        self.mode = AlphaLoginMode(START_RESOLUTION, self)
 
         self.channel = None
         self.logged = False
@@ -31,26 +31,28 @@ class ClientStates(AlphaCommunicationMember):
             stackless.schedule()
 
     def notify(self, message):
-        self.mode.notify(message, self)
+        self.mode.notify(message)
 
     def resize(self, event):
         self.mode.resize(event)
 
 
 class AlphaLoginMode:
-    def __init__(self, screen_size):
+    def __init__(self, screen_size, client_states):
         self.current_size = screen_size
+        self.client_states = client_states
         # screen objects
         self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 4), "LOGIN")
         al = AlphaLabel((3, 29), (120, 24), 'Account:')
         al2 = AlphaLabel((3, 29 * 2), (160, 24), 'Password:')
         ae = AlphaEditBox((3 + 150, 29), (145, 24), '')
-        ae2 = AlphaEditBox((3 + 150, 29 * 2), (145, 24), '')
+        ae2 = AlphaEditBox((3 + 150, 29 * 2), (145, 24), '', password=True)
 
-        ab = AlphaButton((0, 29 * 3), (150, 29), 'CANCEL', callback=print, callback_args=('cancel',))
-        ab2 = AlphaButton((150, 29 * 3), (149, 29), 'OK', callback=print, callback_args=('ok',))
+        ab = AlphaButton((0, 29 * 3), (150, 29), 'CANCEL', callback=print, callback_args=('Cancel button',))
+        ab2 = AlphaButton((150, 29 * 3), (149, 29), 'OK', callback=self.try_login, callback_args=(ae, ae2,))
+        self.aw.escape = ab
+        self.aw.enter = ab2
         self.aw.add_component([al, al2, ae, ae2, ab, ab2])
-        self.selection = ae
         self.prepare()
 
     def resize(self, event):
@@ -67,18 +69,20 @@ class AlphaLoginMode:
     def iterate(self):
         pass
 
-    def notify(self, message, caller):
-        if type(message) is type(pygame.event):
-            if self.selection:
-                self.selection.notify(message)
-        if message[0] == 'KEY' and message[1] == 'ENTER':
-            caller.logged = True
-            caller.mode = AlphaPlayMode(self.current_size)
-            caller.channel.push([0, 'START'])
+    def notify(self, message):
+        if isinstance(message, pygame.event.EventType):
+            if self.aw.notify(message):
+                self.aw.update()
+
+    def try_login(self, user_ui, passwd_ui):
+        self.client_states.logged = True
+        self.client_states.mode = AlphaPlayMode(self.current_size, self.client_states)
+        self.client_states.channel.push([0, 'START', user_ui.text, passwd_ui.text])
 
 
 class AlphaPlayMode:
-    def __init__(self, screen_size):
+    def __init__(self, screen_size, client_states):
+        self.client_states = client_states
         self.current_size = screen_size
         # player and game information
         self.player_character = None
@@ -257,53 +261,57 @@ class AlphaPlayMode:
                     self.player_character.movement[0], self.player_character.movement[1])
                     self.player_character.start_movement = None
 
-    def notify(self, message, caller):
-        # print("States received", message)
-        if message[0] == 'KEY':
-            if message[1] in ['LEFT', 'RIGHT', 'UP', 'DOWN'] and self.player_character.start_movement is None:
-                if message[1] == 'LEFT':
-                    caller.channel.push([0, 'MAP', self.player_character.pos[0] - 1, self.player_character.pos[1]])
-                elif message[1] == 'RIGHT':
-                    caller.channel.push([0, 'MAP', self.player_character.pos[0] + 1, self.player_character.pos[1]])
-                elif message[1] == 'UP':
-                    caller.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] - 1])
-                elif message[1] == 'DOWN':
-                    caller.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] + 1])
-        elif message[0] == 'ADD_ENTITIES':
-            for i in message[1]:
-                self.add_entity(i)
-        elif message[0] == 'REMOVE_ENTITIES':
-            for i in message[1]:
-                self.remove_entity(i)
-        elif message[0] == 'CURR_ENTITIES':
-            self.replace_entities(message[1])
-        elif message[0] == 'MAP':
-            self.map_center = (message[1], message[2])
-            self.player_character.set_movement(message[1] - self.player_character.pos[0], message[2] - self.player_character.pos[1])
-            ret = message[3]
-            for j in range(GRID_MEMORY_SIZE[1]):
-                for i in range(GRID_MEMORY_SIZE[0]):
-                    self.tiled_memory[i][j] = ret[i][j]
-                    self.tiled_memory[i][j].load(self.rl)
-            self.ready_map = True
-            if self.ready_player:
-                self.ready = True
-        elif message[0] == 'POS':
-            self.player_character.pos = (message[1], message[2])
-            self.player_character.set_movement(0, 0, immediate=True)
-        elif message[0] == 'PLAYER':
-            self.player_character = message[1]
-            self.player_character.load(self.rl)
-            font = self.rl.get_font()
-            self.player_character.entity_name_surface = font.render(message[1].name, 1, FONT_COLOR)
-            self.ready_player = True
-            if self.ready_map:
-                self.ready = True
-        elif message[0] == 'SAY':
-            font = self.rl.get_font()
-            self.texts_on_screen.append((time.time(), font.render(message[2].name + ': ' + message[1], 1, FONT_COLOR), message[2]))
+    def notify(self, message):
+        if isinstance(message, pygame.event.EventType):
+            event = message
+            if event.type == pygame.locals.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                elif event.key == pygame.K_RIGHT:
+                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                elif event.key == pygame.K_UP:
+                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] - 1])
+                elif event.key == pygame.K_DOWN:
+                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] + 1])
         else:
-            print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)
+            # print("States received", message)
+            if message[0] == 'KEY':
+                pass
+            elif message[0] == 'ADD_ENTITIES':
+                for i in message[1]:
+                    self.add_entity(i)
+            elif message[0] == 'REMOVE_ENTITIES':
+                for i in message[1]:
+                    self.remove_entity(i)
+            elif message[0] == 'CURR_ENTITIES':
+                self.replace_entities(message[1])
+            elif message[0] == 'MAP':
+                self.map_center = (message[1], message[2])
+                self.player_character.set_movement(message[1] - self.player_character.pos[0], message[2] - self.player_character.pos[1])
+                ret = message[3]
+                for j in range(GRID_MEMORY_SIZE[1]):
+                    for i in range(GRID_MEMORY_SIZE[0]):
+                        self.tiled_memory[i][j] = ret[i][j]
+                        self.tiled_memory[i][j].load(self.rl)
+                self.ready_map = True
+                if self.ready_player:
+                    self.ready = True
+            elif message[0] == 'POS':
+                self.player_character.pos = (message[1], message[2])
+                self.player_character.set_movement(0, 0, immediate=True)
+            elif message[0] == 'PLAYER':
+                self.player_character = message[1]
+                self.player_character.load(self.rl)
+                font = self.rl.get_font()
+                self.player_character.entity_name_surface = font.render(message[1].name, 1, FONT_COLOR)
+                self.ready_player = True
+                if self.ready_map:
+                    self.ready = True
+            elif message[0] == 'SAY':
+                font = self.rl.get_font()
+                self.texts_on_screen.append((time.time(), font.render(message[2].name + ': ' + message[1], 1, FONT_COLOR), message[2]))
+            else:
+                print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)
 
     def replace_entities(self, entities):
         self.entities = dict()

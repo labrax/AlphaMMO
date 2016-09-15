@@ -32,30 +32,7 @@ class AlphaServerMap:
                         ('roguelikeDungeon_transparent.png', 0, 2))
         self.tiled_memory[6][6].decor_objects.append(('roguelikeDungeon_transparent.png', 0, 0))
 
-        p1 = Entity()
-        p1.pos = (5, 6)
-        p1.sprite = ('roguelikeChar_transparent.png', 1, 9)
-        p1.entity_id = 2
-        p1.speed_pixels = 8
-        p1.movement = (4, 6)
-        p1.start_movement = time.time()
-        p1.name = 'AaaN'
-        self.tiled_memory[6][5].entities.append(p1)
-
-        p2 = Entity()
-        p2.pos = (2, 2)
-        p2.sprite = ('roguelikeChar_transparent.png', 0, 7)
-        p2.entity_id = 3
-        p2.speed_pixels = 4
-        p2.movement = (1, 1)
-        p2.start_movement = time.time()
-        p2.name = 'Bbbhashashahsa'
-        self.tiled_memory[2][2].entities.append(p2)
-
-        for i in [p1, p2]:
-            self.all_entities[i.entity_id] = i
-
-    def get_entities(self, curr_entity):
+    def get_nearby_entities(self, curr_entity):
         curr_entity = self.all_entities[curr_entity]
         ret_entities = list()
         for j in range(curr_entity.pos[1] - int(GRID_MEMORY_SIZE[1] / 2),
@@ -68,10 +45,13 @@ class AlphaServerMap:
                             ret_entities.append(elem)
         return ret_entities
 
-    def add_player(self, entity):
-        self.all_entities[entity.entity_id] = entity
-        self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.append(entity)
+    def get_entity(self, entity):
+        return self.all_entities.get(entity, None)
 
-    def remove_player(self, entity):
+    def set_entity(self, entity):
+        self.all_entities[entity.entity_id] = entity
+        self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.add(entity)
+
+    def remove_entity(self, entity):
         self.all_entities.pop(entity.entity_id)
         self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.remove(entity)

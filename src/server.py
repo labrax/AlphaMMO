@@ -17,9 +17,10 @@ from util.alpha_entities import Tile
 from server_util.server_map import AlphaServerMap
 from util.alpha_communication import AlphaCommunicationChannel
 from util.alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
-from util.alpha_entities import Entity as ServerEntity
 
 from util.alpha_exceptions import SingletonViolated
+
+from server_util.server_entities import AlphaServerEntities
 
 
 class AlphaServerTasklet(AlphaCommunicationChannel):
@@ -46,17 +47,7 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
         self.client_socket = client_socket
         self.address = address
         self.socket_buffer = ''.encode()
-
-        p0 = ServerEntity()
-        p0.pos = (6, 6)
-        p0.sprite = ('roguelikeChar_transparent.png', 0, 8)
-        p0.entity_id = 0
-        p0.speed_pixels = 16 * 5
-        p0.player_controlled = True
-        p0.name = "It's me"
-        self.entity = p0
-        AlphaServer.__instance__.set_tasklet(self.entity.entity_id, self)
-        AlphaServer.__instance__.server_map.add_player(self.entity)
+        self.session_id = -1
 
     def run(self):
         while self.running:
@@ -80,7 +71,7 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                                     read = True
                                     current_read = self.socket_buffer[len_size + 1: len_size + 1 + size]
                                     self.socket_buffer = self.socket_buffer[len_size + 1 + size:]
-                                    data = pickle.loads(current_read)
+                                    data = [i.decode() for i in current_read.split(b' ')]
                                     # print("Server receiving from client", data)
                                     self.to_server(data)
                     else:
@@ -104,16 +95,16 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                 self.running = False
             stackless.schedule()
         self.client_socket.close()
-        AlphaServer.__instance__.server_map.remove_player(self.entity)
+        AlphaServer.__instance__.server_map.remove_entity(self.entity)
         # this way when we lose connection to the server the player gets disconnected
         stackless.schedule_remove()
 
     def to_server(self, message):
-        session_id = message[0]
+        print("server recv", self.session_id, message)
         try:
             if message[1] == 'MAP':
-                player_x = message[2]
-                player_y = message[3]
+                player_x = int(message[2])
+                player_y = int(message[3])
 
                 ret = [[Tile() for _2 in range(CLIENT_GRID_MEMORY_SIZE[0])] for _ in range(CLIENT_GRID_MEMORY_SIZE[1])]
                 for j in range(player_y - int(CLIENT_GRID_MEMORY_SIZE[1] / 2),
@@ -127,13 +118,19 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                         AlphaServer.__instance__.server_map.tiled_memory[j][i]
 
                 self.channel.push(['MAP', player_x, player_y, ret])
-                self.channel.push(['CURR_ENTITIES', AlphaServer.__instance__.get_entities(session_id)])
+                self.channel.push(['CURR_ENTITIES', AlphaServer.__instance__.get_nearby_entities(self.session_id)])
             elif message[1] == 'START':
-                self.channel.push(['PLAYER', AlphaServer.__instance__.get_player(session_id)])
+                self.entity = AlphaServer.__instance__.server_entities.create_random_player()
+                self.entity.name = message[2]
+                self.session_id = self.entity.entity_id
+                AlphaServer.__instance__.set_tasklet(self.entity.entity_id, self)
+                AlphaServer.__instance__.server_map.set_entity(self.entity)
+
+                self.channel.push(['PLAYER', AlphaServer.__instance__.get_entity(self.session_id)])
                 self.channel.push(['POS', 6, 6])
-                self.to_server([session_id, 'MAP', 6, 6])
+                self.to_server([self.session_id, 'MAP', 6, 6])
             elif message[1] == 'SAY':
-                self.channel.push(['SAY', message[2], AlphaServer.__instance__.get_player(session_id)])
+                self.channel.push(['SAY', message[2], AlphaServer.__instance__.get_entity(self.session_id)])
             else:
                 print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)
         except Exception as e:
@@ -151,23 +148,23 @@ class AlphaServerNPCTasklet(AlphaServerTasklet):
         self.last_time = time.time()
         while self.running:
             this_time = time.time()
-            if time.time() - self.last_time > 8:
+            '''if time.time() - self.last_time > 8:
                 # push to all nearby
-                for i in AlphaServer.__instance__.get_entities(self.entity.entity_id):
+                for i in AlphaServer.__instance__.get_nearby_entities(self.entity.entity_id):
                     goal = AlphaServer.__instance__.get_tasklet(i.entity_id)
                     if goal:
                         goal.channel.push(
-                            ['SAY', 'Hello?' + str(random.random()), self.entity])
-                self.last_time = time.time()
+                            ['SAY', 'Hello?', self.entity])
+                self.last_time = time.time()'''
 
             if self.entity.start_movement:
                 if (this_time - self.entity.start_movement) * self.entity.speed_pixels > TILE_SIZE:
                     AlphaServer.__instance__.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.remove(self.entity)
                     self.entity.pos = (self.entity.movement[0], self.entity.movement[1])
-                    AlphaServer.__instance__.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.append(self.entity)
+                    AlphaServer.__instance__.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.add(self.entity)
                     self.entity.start_movement = None
                     # push to all nearby
-                    for i in AlphaServer.__instance__.get_entities(self.entity.entity_id):
+                    for i in AlphaServer.__instance__.get_nearby_entities(self.entity.entity_id):
                         if i.player_controlled:
                             goal = AlphaServer.__instance__.get_tasklet(i.entity_id)
                             if goal:
@@ -190,7 +187,7 @@ class AlphaServerNPCTasklet(AlphaServerTasklet):
                             if 0 <= self.entity.pos[0] < GRID_MEMORY_SIZE[0] and 0 <= self.entity.pos[1] - 1 < GRID_MEMORY_SIZE[1]:
                                 self.entity.set_movement(0, -1)
                     # push to all nearby
-                    for i in AlphaServer.__instance__.get_entities(self.entity.entity_id):
+                    for i in AlphaServer.__instance__.get_nearby_entities(self.entity.entity_id):
                         if i.player_controlled:
                             goal = AlphaServer.__instance__.get_tasklet(i.entity_id)
                             if goal:
@@ -213,6 +210,7 @@ class AlphaServer:
         self.server_socket.listen(MAX_SERVER_CONN)
 
         self.server_map = AlphaServerMap()
+        self.server_entities = AlphaServerEntities()
 
         self.running = False
 
@@ -224,7 +222,9 @@ class AlphaServer:
         self.server_map.start()
 
         # start entities tasklet
-        for i in self.server_map.all_entities.values():
+        for _ in range(5):
+            i = self.server_entities.create_random_npc()
+            self.server_map.set_entity(i)
             tasklet_object = AlphaServerNPCTasklet(i)
             self.tasklets_objects.append(tasklet_object)
             tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
@@ -258,11 +258,14 @@ class AlphaServer:
 
         self.server_socket.close()
 
-    def get_entities(self, curr_entity):
-        return self.server_map.get_entities(curr_entity)
+    def get_nearby_entities(self, curr_entity):
+        return self.server_map.get_nearby_entities(curr_entity)
 
-    def get_player(self, session_id):
-        return self.server_map.all_entities[session_id]
+    def get_entity(self, entity_id):
+        return self.server_map.get_entity(entity_id)
+
+    def set_entity(self, entity):
+        self.server_map.set_entity(entity)
 
     def get_tasklet(self, entity_id):
         return self.tasklets_entities.get(entity_id, None)

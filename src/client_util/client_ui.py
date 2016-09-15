@@ -15,6 +15,9 @@ LABEL_FONT = AlphaResourceLoader().get_font(fontsize=24)
 EDITBOX_COLOR = (160, 160, 160)
 BUTTON_BORDER = (230, 230, 230)
 
+from pygame.locals import KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION, KMOD_SHIFT, KMOD_CTRL
+from client_util.keys import keys, keys_special
+
 
 class AlphaGameUI:
     curr_id = 1
@@ -38,12 +41,18 @@ class AlphaGameUI:
     def update(self):
         pass
 
+    def notify(self, event):
+        pass
+
 
 class AlphaWindow(AlphaGameUI):
     def __init__(self, pos, size, title_name):
         super(AlphaWindow, self).__init__(pos, size)
         self.title_name = title_name
         self.components = dict()
+        self.selected = None
+        self.enter = None
+        self.escape = None
         self.update()
 
     def update(self):
@@ -63,9 +72,45 @@ class AlphaWindow(AlphaGameUI):
         # (3, 29) is a good position after the screen title
         if type(component) == list:
             for i in component:
+                if not self.selected and (isinstance(i, AlphaButton) or isinstance(i, AlphaEditBox)):
+                    self.selected = i
                 self.components[i.id] = i
         else:
+            if not self.selected and (isinstance(component, AlphaButton) or isinstance(component, AlphaEditBox)):
+                self.selected = component
             self.components[component.id] = component
+
+    def notify(self, event):
+        if event.type == KEYDOWN:
+            if event.key in keys_special:
+                obj = keys_special[event.key][1]
+                if obj in ['return', 'enter', 'keypad enter']:
+                    if self.enter:
+                        return self.enter.notify(event)
+                elif obj in ['escape']:
+                    if self.escape:
+                        return self.escape.notify(event)
+                elif obj == 'tab':
+                    rel = [i for i in self.components.values()]
+                    for i in range(len(rel)):
+                        if rel[i] == self.selected:
+                            if pygame.key.get_mods() & KMOD_SHIFT:
+                                if i == 0:
+                                    self.selected = rel[len(rel) - 1]
+                                else:
+                                    self.selected = rel[i - 1]
+                            else:
+                                if i + 1 == len(rel):
+                                    self.selected = rel[0]
+                                    return True
+                                else:
+                                    self.selected = rel[i + 1]
+                                    return True
+            if self.selected:
+                return self.selected.notify(event)
+        if event.type == MOUSEBUTTONDOWN:
+            # todo: soon
+            pass
 
 
 class AlphaLabel(AlphaGameUI):
@@ -80,25 +125,44 @@ class AlphaLabel(AlphaGameUI):
 
 
 class AlphaEditBox(AlphaLabel):
-    def __init__(self, pos, size, text):
+    def __init__(self, pos, size, text, password=False):
+        self.password = password
         super(AlphaEditBox, self).__init__(pos, size, text)
-        self.update()
 
     def update(self):
         self.surface.fill(LABEL_BACKGROUND)
-        font_surface = LABEL_FONT.render(self.text, 1, EDITBOX_COLOR)
+        if self.password:
+            font_surface = LABEL_FONT.render('*' * len(self.text), 1, EDITBOX_COLOR)
+        else:
+            font_surface = LABEL_FONT.render(self.text, 1, EDITBOX_COLOR)
         self.surface.blit(font_surface, (2, 2))
 
     def notify(self, event):
-        # todo: add text
-        pass
+        if event.type == KEYDOWN:
+            if event.key in keys_special:
+                obj = keys_special[event.key][1]
+                if obj in ['backspace'] and len(self.text) > 0:
+                    self.text = self.text[:-1]
+                    return True
+            elif event.key in keys:
+                obj = keys[event.key][0]
+                if obj == 'u' and pygame.key.get_mods() & KMOD_CTRL:
+                    self.text = ''
+                else:
+                    if pygame.key.get_mods() & KMOD_SHIFT:
+                        obj = obj.upper()
+                    self.text += obj
+                return True
 
 
 class AlphaButton(AlphaLabel):
     def __init__(self, pos, size, text, callback, callback_args=None):
-        super(AlphaButton, self).__init__(pos, size, text)
+        if not callback_args:
+            self.callback_args = ()
+        else:
+            self.callback_args = callback_args
         self.callback = callback
-        self.callback_args = callback_args
+        super(AlphaButton, self).__init__(pos, size, text)
 
     def update(self):
         font_surface = LABEL_FONT.render(self.text, 1, FONT_COLOR)

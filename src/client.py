@@ -33,10 +33,10 @@ class AlphaGameClient:
         # channel_to_server = AlphaCommunicationChannel(self.client_server)  ###
         channel_to_server = AlphaCommunicationChannel(self.client_socket)
         self.client_communication.add(channel_to_server)
-        channel_to_states = AlphaCommunicationChannel(self.client_states)
-        self.client_communication.add(channel_to_states)
+        # channel_to_states = AlphaCommunicationChannel(self.client_states)
+        # self.client_communication.add(channel_to_states)
 
-        self.client_input.channel = channel_to_states
+        # self.client_input.channel = channel_to_states
         self.client_states.channel = channel_to_server
         # self.client_server.channel = channel_to_states  ###
 
@@ -63,7 +63,8 @@ class AlphaGameClient:
             events = pygame.event.get()
             for event in events:
                 if event.type in [KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION]:
-                    self.client_input.handle(event)
+                    self.client_states.notify(event)
+                    # self.client_input.handle(event)
                 if event.type == VIDEORESIZE:
                     self.client_screen.resize(event)
                     self.client_states.resize(event)
@@ -75,8 +76,8 @@ class AlphaGameClient:
             new_time = pygame.time.get_ticks()
             waited = new_time - old_time
             old_time = new_time
-            if waited < 60:
-                time.sleep(1.0 / (FPS - waited))
+            if waited < FPS:
+                 time.sleep(1.0 / (FPS - waited))
 
         self.client_states.running = False
         self.client_communication.running = False
