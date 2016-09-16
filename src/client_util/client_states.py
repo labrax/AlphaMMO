@@ -13,6 +13,8 @@ from util.alpha_resource_loader import AlphaResourceLoader
 import pygame
 from client_util.client_ui import AlphaWindow, AlphaLabel, AlphaEditBox, AlphaButton
 from util.alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, transparent, DRAW_PLAYERS_NAME
+from client_util.client_internal_protocol import AlphaClientProtocol, AlphaClientProtocolValues
+from util.alpha_protocol import AlphaProtocol
 
 
 class ClientStates(AlphaCommunicationMember):
@@ -73,11 +75,24 @@ class AlphaLoginMode:
         if isinstance(message, pygame.event.EventType):
             if self.aw.notify(message):
                 self.aw.update()
+        else:
+            if message[0] == AlphaProtocol.STATUS:
+                if message[1] == 1:
+                    self.client_states.session_id = message[2]
+                    self.client_states.mode = AlphaPlayMode(self.current_size, self.client_states)
+                    self.client_states.logged = True
+                elif message[1] == -2:
+                    # todo: improve message
+                    print('Invalid login/password.')
+                elif message[1] == -3:
+                    print("Server is overloaded.")
+                else:
+                    print("Invalid at notify for login mode")
+            else:
+                print("AlphaLoginMode received", message)
 
     def try_login(self, user_ui, passwd_ui):
-        self.client_states.logged = True
-        self.client_states.mode = AlphaPlayMode(self.current_size, self.client_states)
-        self.client_states.channel.push([0, 'START', user_ui.text, passwd_ui.text])
+        self.client_states.channel.push([AlphaClientProtocol.TRY_LOGIN, user_ui.text, passwd_ui.text])
 
 
 class AlphaPlayMode:
@@ -266,52 +281,54 @@ class AlphaPlayMode:
             event = message
             if event.type == pygame.locals.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] - 1, self.player_character.pos[1]])
                 elif event.key == pygame.K_RIGHT:
-                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] + 1, self.player_character.pos[1]])
                 elif event.key == pygame.K_UP:
-                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] - 1])
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] - 1])
                 elif event.key == pygame.K_DOWN:
-                    self.client_states.channel.push([0, 'MAP', self.player_character.pos[0], self.player_character.pos[1] + 1])
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] + 1])
         else:
             # print("States received", message)
-            if message[0] == 'KEY':
-                pass
-            elif message[0] == 'ADD_ENTITIES':
+            if message[0] == AlphaProtocol.SET_ENTITIES:
                 for i in message[1]:
                     self.add_entity(i)
-            elif message[0] == 'REMOVE_ENTITIES':
+            elif message[0] == AlphaProtocol.REMOVE_ENTITIES:
                 for i in message[1]:
                     self.remove_entity(i)
-            elif message[0] == 'CURR_ENTITIES':
+            elif message[0] == AlphaProtocol.REPLACE_ENTITIES:
                 self.replace_entities(message[1])
-            elif message[0] == 'MAP':
-                self.map_center = (message[1], message[2])
+            elif message[0] == AlphaProtocol.MOVING:
                 self.player_character.set_movement(message[1] - self.player_character.pos[0], message[2] - self.player_character.pos[1])
+            elif message[0] == AlphaProtocol.RECEIVE_MAP:
+                self.map_center = (message[1], message[2])
                 ret = message[3]
                 for j in range(GRID_MEMORY_SIZE[1]):
                     for i in range(GRID_MEMORY_SIZE[0]):
                         self.tiled_memory[i][j] = ret[i][j]
                         self.tiled_memory[i][j].load(self.rl)
                 self.ready_map = True
-                if self.ready_player:
-                    self.ready = True
-            elif message[0] == 'POS':
+            elif message[0] == AlphaProtocol.TELEPORT:
                 self.player_character.pos = (message[1], message[2])
                 self.player_character.set_movement(0, 0, immediate=True)
-            elif message[0] == 'PLAYER':
+            elif message[0] == AlphaProtocol.RECEIVE_PLAYER:
                 self.player_character = message[1]
                 self.player_character.load(self.rl)
                 font = self.rl.get_font()
                 self.player_character.entity_name_surface = font.render(message[1].name, 1, FONT_COLOR)
                 self.ready_player = True
-                if self.ready_map:
-                    self.ready = True
-            elif message[0] == 'SAY':
+            elif message[0] == AlphaProtocol.SPEAKING:
                 font = self.rl.get_font()
                 self.texts_on_screen.append((time.time(), font.render(message[2].name + ': ' + message[1], 1, FONT_COLOR), message[2]))
             else:
                 print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)
+
+        if self.ready_map and self.ready_player:
+            self.ready = True
 
     def replace_entities(self, entities):
         self.entities = dict()

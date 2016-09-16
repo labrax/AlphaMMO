@@ -17,6 +17,9 @@ class AlphaCommunicationChannel:
     def push(self, message):
         self.queue.put(message)
 
+    def clean(self):
+        self.queue = Queue()
+
 
 class AlphaCommunication:
     def __init__(self):

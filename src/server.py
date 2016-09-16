@@ -95,7 +95,10 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                 self.running = False
             stackless.schedule()
         self.client_socket.close()
-        AlphaServer.__instance__.server_map.remove_entity(self.entity)
+        try:
+            AlphaServer.__instance__.server_map.remove_entity(self.entity)
+        except:
+            pass
         # this way when we lose connection to the server the player gets disconnected
         stackless.schedule_remove()
 
@@ -242,14 +245,17 @@ class AlphaServer:
 
             # we have a client connecting
             if len(rr) > 0:
-                client_socket, address = self.server_socket.accept()
-                print("Client connecting", address)
-                client_socket = ssl.wrap_socket(client_socket, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1,
-                                                certfile=CERTIFICATE_FILE, keyfile=KEY_FILE)
+                try:
+                    client_socket, address = self.server_socket.accept()
+                    print("Client connecting", address)
+                    client_socket = ssl.wrap_socket(client_socket, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1,
+                                                    certfile=CERTIFICATE_FILE, keyfile=KEY_FILE)
 
-                tasklet_object = AlphaServerPlayerTasklet(client_socket, address)
-                self.tasklets_objects.append(tasklet_object)
-                tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
+                    tasklet_object = AlphaServerPlayerTasklet(client_socket, address)
+                    self.tasklets_objects.append(tasklet_object)
+                    tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
+                except:
+                    print("Client failed.")
 
             stackless.schedule()
             elapsed = time.time() - last_time
