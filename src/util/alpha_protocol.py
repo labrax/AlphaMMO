@@ -64,7 +64,7 @@ protocol_format = dict(LOGIN=(str, str),  # user, passwd
                        PING=(int,),
                        PONG=(int,),
 
-                       REQUEST_RECONNECT=(int,)  # session id
+                       REQUEST_RECONNECT=(int,)  # session token
                        )
 
 # we will verify each message that arrives to see if it is to the right destination
@@ -107,19 +107,24 @@ def check_valid(message, isserver):
     def _wrap(message, isserver):
         try:
             ap = AlphaProtocol(message[0])
+            message = message[1:]
             if isserver and ap.name not in server_accepts:
                 return False
             elif not isserver and ap.name not in client_accepts:
                 return False
             this_format = protocol_format[ap.name]
-            for i in range(len(this_format)):
-                if this_format[i] == list:
-                    for e in message[i+1]:
-                        if type(e) not in this_format[i+1]:
+            i = -1
+            for f in range(len(this_format)):
+                i += 1
+                if len(this_format) - this_format.count(list) == i:
+                    break
+                if this_format[f] == list:
+                    for e in message[i]:
+                        if type(e) not in this_format[f+1]:
                             return False
-                    i += 1
+                    f += 1
                     continue
-                elif not isinstance(message[i+1], this_format[i]):
+                elif not isinstance(message[i], this_format[f]):
                     return False
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -128,5 +133,36 @@ def check_valid(message, isserver):
             return False
         return True
     status = _wrap(message, isserver)
-    print('CHECKING MESSAGE', status, message)
+    # print('CHECKING MESSAGE', status, message)
     return status
+
+
+def retrieve_with_types(message, isserver):
+    assert isserver  # this function is not ready to handle lists at the client!
+    def _wrap(message):
+        try:
+            ap = message[0]
+            message = message[1:]
+            this_format = protocol_format[ap.name]
+            i = -1
+            for f in range(len(this_format)):
+                i += 1
+                if this_format[f] == list:
+                    for e in message[i+1]:
+                        if type(e) not in this_format[f+1]:
+                            raise Exception("Invalid message format")
+                    f += 1
+                    continue
+                else:
+                    try:
+                        message[i] = this_format[f](message[i])
+                    except:
+                        raise Exception("Invalid message format")
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, e, fname, exc_tb.tb_lineno)
+        return message
+    new_message = [message[0]] + _wrap(message)
+    # print('OBTAINED', new_message)
+    return new_message

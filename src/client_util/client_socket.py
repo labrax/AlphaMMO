@@ -36,8 +36,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
         except:
             # this case we can't even establish a connection to the server, thus it is offline and we are gonna stay too
             self.to_client_internal([AlphaClientProtocol, AlphaClientProtocolValues.OFF])
-            self.state = AlphaClientProtocolValues.OFF
-            return
+            self.on_error(self.__class__, 'Error establishing connection', self.start, '', failed=True)
         if self.state == AlphaClientProtocolValues.RECONNECTING:
             self.push([AlphaProtocol.REQUEST_RECONNECT, self.client_states.session_id])
         self.state = AlphaClientProtocolValues.CONNECTED
@@ -68,11 +67,14 @@ class AlphaClientSocket(AlphaCommunicationChannel):
             else:
                 print('Client to server invalid message', message)
 
-    def on_error(self, exc, e, fnma, lineno):
+    def on_error(self, exc, e, fnma, lineno, failed=False):
         # something went wrong, player is now offline - needs to re-establish connection
         print(exc, e, fnma, lineno)
-        self.to_client_internal([AlphaClientProtocol.INTERNAL_STATUS, AlphaClientProtocolValues.RECONNECTING])
-        self.state = AlphaClientProtocolValues.RECONNECTING
+        if failed:
+            self.state = AlphaClientProtocolValues.OFF
+        else:
+            self.state = AlphaClientProtocolValues.RECONNECTING
+        self.to_client_internal([AlphaClientProtocol.INTERNAL_STATUS, self.state])
 
     def run(self):
         while self.running:
@@ -105,14 +107,16 @@ class AlphaClientSocket(AlphaCommunicationChannel):
                                         # print("Receiving...", current_read)
                                         self.to_client(pickle.loads(current_read))
                         else:
-                            self.on_error(self.__class__, 'Received no content', self.run, '')
+                            self.on_error(self.__class__, 'Received no content', self.run, '', failed=True)
                     except Exception as e:
                         exc_type, exc_obj, exc_tb = sys.exc_info()
                         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                         self.on_error(exc_type, e, fname, exc_tb.tb_lineno)
                 try:
                     while self.queue.qsize() > 0:
-                        data = b' '.join([str(i).encode() for i in self.queue.get()])
+                        qval = self.queue.get()
+                        data = str(qval[0].value).encode() + b' ' + b' '.join([str(i).encode() for i in qval[1:]])
+                        # data = b' '.join([str(i).encode() for i in self.queue.get()])
                         # print("Socket sending", data)
                         self.server_socket.send(str(len(data)).encode() + b' ' + data)
                 except Exception as e:
