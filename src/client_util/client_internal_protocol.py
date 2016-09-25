@@ -9,6 +9,7 @@ class AlphaClientProtocol(Enum):
 
     # from the client_states
     TRY_LOGIN = 100
+    TRY_REGISTER = 200
 
 
 class AlphaClientProtocolValues(Enum):

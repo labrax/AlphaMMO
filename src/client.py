@@ -56,7 +56,7 @@ class AlphaGameClient:
     def run(self):
         running = True
 
-        old_time = pygame.time.get_ticks()
+        old_time = time.time()
         while running:
             stackless.schedule()
 
@@ -73,11 +73,12 @@ class AlphaGameClient:
 
             self.client_screen.render(self.client_states)
 
-            new_time = pygame.time.get_ticks()
+            new_time = time.time()
             waited = new_time - old_time
             old_time = new_time
-            #if waited < FPS:
-            #     time.sleep(1.0 / (FPS - waited))
+            #print("FPS", 1/waited)
+            if waited < FPS:
+                 time.sleep(1.0 / (FPS - waited))
 
         self.client_states.running = False
         self.client_communication.running = False

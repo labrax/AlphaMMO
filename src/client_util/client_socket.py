@@ -59,6 +59,10 @@ class AlphaClientSocket(AlphaCommunicationChannel):
             # todo: implement
             self.push([AlphaProtocol.LOGIN, message[1], message[2]])
             self.state = AlphaClientProtocolValues.TRYING_CONNECTION
+        elif message[0] == AlphaClientProtocol.TRY_REGISTER:
+            # todo: implement properly ;)
+            self.push([AlphaProtocol.REGISTER, message[1], message[2], message[3]])
+            self.state = AlphaClientProtocolValues.TRYING_CONNECTION
         elif message[0] == AlphaClientProtocol.INTERNAL_STATUS and message[1] == AlphaClientProtocolValues.FORCE_SHUTDOWN:
             self.state = AlphaClientProtocolValues.OFF
         else:

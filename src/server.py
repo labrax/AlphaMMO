@@ -15,6 +15,7 @@ from util.alpha_exceptions import SingletonViolated
 
 from server_util.server_npc_tasklet import AlphaServerNPCTasklet
 from server_util.server_player_tasklet import AlphaServerPlayerTasklet
+from server_util.server_database import AlphaDatabase
 
 from server_util.server_entities import AlphaServerEntities
 
@@ -30,7 +31,8 @@ class AlphaServer:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((HOST_BIND, PORT_BIND))
-        self.server_socket.listen(MAX_SERVER_CONN)
+
+        self.server_database = AlphaDatabase()
 
         self.server_map = AlphaServerMap()
         self.server_entities = AlphaServerEntities()
@@ -53,6 +55,7 @@ class AlphaServer:
             tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
 
         # server run
+        self.server_socket.listen(MAX_SERVER_CONN)
         self.running = True
         stackless.tasklet(self.run)()
         stackless.run()
@@ -80,8 +83,9 @@ class AlphaServer:
 
             stackless.schedule()
             elapsed = time.time() - last_time
+            #print("FPS", 1/elapsed)
             if elapsed < ITERATION_TIME:
-                time.sleep(ITERATION_TIME - elapsed)
+               time.sleep(ITERATION_TIME - elapsed)
 
         self.server_socket.close()
 

@@ -139,7 +139,11 @@ class AlphaEditBox(AlphaLabel):
 
     def notify(self, event):
         if event.type == KEYDOWN:
-            if event.key in keys_special:
+            if pygame.key.get_mods() & KMOD_SHIFT:
+                if event.key == pygame.K_2:
+                    self.text += '@'
+                    return True
+            elif event.key in keys_special:
                 obj = keys_special[event.key][1]
                 if obj in ['backspace'] and len(self.text) > 0:
                     self.text = self.text[:-1]

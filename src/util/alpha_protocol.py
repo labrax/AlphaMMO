@@ -10,6 +10,7 @@ class AlphaProtocol(Enum):
     LOGIN = 0
     LOGOUT = -1
     STATUS = 1
+    REGISTER = 2
 
     REQUEST_MOVE = 10
     REQUEST_SPEAK = 11
@@ -40,6 +41,7 @@ class AlphaProtocol(Enum):
 protocol_format = dict(LOGIN=(str, str),  # user, passwd
                        LOGOUT=tuple(),
                        STATUS=(int, int),  # 0 denied/offline, 1 login granted, -2 wrong user/passwd, -3 server overload AND session_id
+                       REGISTER=(str, str, str),  # account, password, email
 
                        REQUEST_MOVE=(int, int),  # coordinates
                        REQUEST_SPEAK=(str,),  # text
@@ -70,6 +72,7 @@ protocol_format = dict(LOGIN=(str, str),  # user, passwd
 # we will verify each message that arrives to see if it is to the right destination
 server_accepts = dict(LOGIN=True,
                       LOGOUT=True,
+                      REGISTER=True,
 
                       REQUEST_MOVE=True,
                       REQUEST_SPEAK=True,

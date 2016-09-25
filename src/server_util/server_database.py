@@ -21,7 +21,7 @@ class AlphaDatabase:
         self.conn = sqlite3.connect(DATABASE_FILE)
         # check if tables are k
         self.conn.cursor().execute(
-            "CREATE TABLE IF NOT EXISTS users_login (account_id VARCHAR (18), password_hash VARCHAR (256), password_salt VARCHAR (256))")
+            "CREATE TABLE IF NOT EXISTS users_login (account_id VARCHAR (18), password_hash VARCHAR (256), password_salt VARCHAR (256), email VARCHAR(256))")
         self.conn.cursor().execute(
             "CREATE TABLE IF NOT EXISTS characters (account_id VARCHAR (34), last_login BIGINT, character_name VARCHAR (18), posx INT, posy INT, pexp BIGINT, max_hp INT, curr_hp INT, max_mp INT, curr_mp INT, skin INT, hair INT, helmet INT, shirt INT, trousers INT, boots INT, shield INT, weapon INT)")
         try:
@@ -48,13 +48,13 @@ class AlphaDatabase:
             raise InvalidLogin('Invalid login at %s' % self.__class__.__name__)
         reply = reply[0]
         salt = reply[2]
-        login_try_password = crypt.crypt(password_passed, "$6$" + salt)
+        login_try_password = crypt.crypt(password_passed, salt)
         if login_try_password == reply[1]:
             return True
         else:
             raise InvalidPassword('Invalid login at %s' % self.__class__.__name__)
 
-    def create_account(self, account_id, password):
+    def create_account(self, account_id, password, email):
         if not account_id.isalnum():
             raise InvalidCharacters('Invalid characters at %s' % self.__class__.__name__)
         if len(account_id) > 16:
@@ -62,8 +62,8 @@ class AlphaDatabase:
         if len(self.conn.cursor().execute("SELECT * FROM users_login WHERE account_id == ?", (account_id, )).fetchall()) > 0:
             raise InvalidValue('Account already exists at %s' % self.__class__.__name__)
         salt = crypt.mksalt()
-        password_hash = crypt.crypt(password, "$6$" + salt)
-        self.conn.cursor().execute("INSERT INTO users_login VALUES (?, ?, ?)", (account_id, password_hash, salt))
+        password_hash = crypt.crypt(password, salt)
+        self.conn.cursor().execute("INSERT INTO users_login VALUES (?, ?, ?, ?)", (account_id, password_hash, salt, email))
         self.conn.commit()
         return True
     

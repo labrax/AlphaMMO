@@ -7,6 +7,7 @@ import select
 import stackless
 import pickle
 
+from util.alpha_exceptions import InvalidLogin, InvalidPassword
 from server_util.server_tasklet import AlphaServerTasklet
 from server_util.alpha_server_defines import SOCKET_BUFFER
 from util.alpha_protocol import AlphaProtocol, retrieve_with_types
@@ -59,10 +60,15 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                 # something went wrong, player is now offline - needs to re-establish connection
                 self.running = False
         try:
+            # sending each packet is heavy (I/O is heavy)
+            # so we will put everything in a single packet: < time with ssl
+            send_buffer = b''
             while self.queue.qsize() > 0:
                 data = pickle.dumps(self.queue.get())
                 # print("Server sending", data)
-                self.client_socket.send(str(len(data)).encode() + b' ' + data)
+                send_buffer += str(len(data)).encode() + b' ' + data
+            if len(send_buffer) > 0:
+                self.client_socket.send(send_buffer)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -100,18 +106,19 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             self.comm()
             stackless.schedule()
         self.client_socket.close()
-        # we will get the list of nearbies to notify upon logout:
-        nearby = self.server.get_nearby_entities(self.entity.entity_id)
-        self.server.server_map.remove_entity(self.entity)
+        if self.entity:
+            # we will get the list of nearbies to notify upon logout:
+            nearby = self.server.get_nearby_entities(self.entity.entity_id)
+            self.server.server_map.remove_entity(self.entity)
 
-        # notify nearbies
-        for i in nearby:
-            if i.player_controlled:
-                goal = self.server.get_tasklet(i.entity_id)
-                if goal:
-                    goal.channel.push(
-                        [AlphaProtocol.REPLACE_ENTITIES, self.server.get_nearby_entities(i.entity_id)])
-        # this way when we lose connection to the server the player gets disconnected
+            # notify nearbies
+            for i in nearby:
+                if i.player_controlled:
+                    goal = self.server.get_tasklet(i.entity_id)
+                    if goal:
+                        goal.channel.push(
+                            [AlphaProtocol.REPLACE_ENTITIES, self.server.get_nearby_entities(i.entity_id)])
+            # this way when we lose connection to the server the player gets disconnected
         stackless.schedule_remove()
 
     def prepare_map(self, player_x, player_y):
@@ -132,33 +139,55 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
         try:
             message = retrieve_with_types(message, True)
             print('SERVER RECEIVED', message)
-            if message[0] == AlphaProtocol.LOGIN:
+            if message[0] == AlphaProtocol.REGISTER:
+                user = message[1]
+                passwd = message[2]
+                email = message[3]
+
+                try:
+                    if self.server.server_database.create_account(user, passwd, email):
+                        self.channel.push([AlphaProtocol.STATUS, 1, self.session_id])
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print(exc_type, e, fname, exc_tb.tb_lineno)
+                    self.channel.push([AlphaProtocol.STATUS, -1, self.session_id])
+            elif message[0] == AlphaProtocol.LOGIN:
                 user = message[1]
                 passwd = message[2]
 
-                player_x = 6
-                player_y = 6
-                self.entity = self.server.server_entities.create_random_player()
-                self.entity.name = message[1]
-                self.session_id = self.entity.entity_id
-                self.server.set_tasklet(self.entity.entity_id, self)
-                self.server.server_map.set_entity(self.entity)
+                try:
+                    if self.server.server_database.login_account(user, passwd):
+                        player_x = 6
+                        player_y = 6
+                        self.entity = self.server.server_entities.create_random_player()
+                        self.entity.name = message[1]
+                        self.session_id = self.entity.entity_id
+                        self.server.set_tasklet(self.entity.entity_id, self)
+                        self.server.server_map.set_entity(self.entity)
 
-                self.channel.push([AlphaProtocol.STATUS, 1, self.session_id])
-                self.channel.push([AlphaProtocol.RECEIVE_PLAYER, self.server.get_entity(self.session_id)])
-                self.channel.push([AlphaProtocol.TELEPORT, player_x, player_y])
+                        self.channel.push([AlphaProtocol.STATUS, 1, self.session_id])
+                        self.channel.push([AlphaProtocol.RECEIVE_PLAYER, self.server.get_entity(self.session_id)])
+                        self.channel.push([AlphaProtocol.TELEPORT, player_x, player_y])
 
-                ret = self.prepare_map(player_x, player_y)
-                self.channel.push([AlphaProtocol.RECEIVE_MAP, player_x, player_y, ret])
+                        ret = self.prepare_map(player_x, player_y)
+                        self.channel.push([AlphaProtocol.RECEIVE_MAP, player_x, player_y, ret])
 
-                self.channel.push([AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(self.entity.entity_id)])
+                        self.channel.push([AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(self.entity.entity_id)])
 
-                for i in self.server.get_nearby_entities(self.entity.entity_id):
-                    if i.player_controlled:
-                        goal = self.server.get_tasklet(i.entity_id)
-                        if goal:
-                            goal.channel.push([AlphaProtocol.SET_ENTITIES, [self.entity]])
-
+                        for i in self.server.get_nearby_entities(self.entity.entity_id):
+                            if i.player_controlled:
+                                goal = self.server.get_tasklet(i.entity_id)
+                                if goal:
+                                    goal.channel.push([AlphaProtocol.SET_ENTITIES, [self.entity]])
+                except InvalidLogin:
+                    self.channel.push([AlphaProtocol.STATUS, -2, self.session_id])
+                except InvalidPassword:
+                    self.channel.push([AlphaProtocol.STATUS, -2, self.session_id])
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print(exc_type, e, fname, exc_tb.tb_lineno)
             elif message[0] == AlphaProtocol.REQUEST_MOVE:
                 player_x = int(message[1])
                 player_y = int(message[2])
