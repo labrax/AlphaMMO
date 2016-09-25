@@ -23,9 +23,9 @@ class AlphaServerTasklet(AlphaCommunicationChannel):
         this_time = time.time()
         if self.entity and self.entity.start_movement:
             if (this_time - self.entity.start_movement) * self.entity.speed_pixels > TILE_SIZE:
-                self.server.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.remove(self.entity)
+                self.server.server_map.move_entity(self.entity, self.entity.pos, self.entity.movement)
                 self.entity.pos = (self.entity.movement[0], self.entity.movement[1])
-                self.server.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.add(self.entity)
+
                 self.entity.start_movement = None
                 # push to all nearby
                 for i in self.server.get_nearby_entities(self.entity.entity_id):

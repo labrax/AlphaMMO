@@ -58,7 +58,11 @@ class AlphaDatabase:
         if not account_id.isalnum():
             raise InvalidCharacters('Invalid characters at %s' % self.__class__.__name__)
         if len(account_id) > 16:
-            raise InvalidValue('Account too long at %s' % self.__class__.__name__)
+            raise InvalidValue('Account name too long at %s' % self.__class__.__name__)
+        if len(account_id) < 6:
+            raise InvalidValue('Account name too short at %s' % self.__class__.__name__)
+        if len(password) < 6:
+            raise InvalidValue('Password too short at %s' % self.__class__.__name__)
         if len(self.conn.cursor().execute("SELECT * FROM users_login WHERE account_id == ?", (account_id, )).fetchall()) > 0:
             raise InvalidValue('Account already exists at %s' % self.__class__.__name__)
         salt = crypt.mksalt()

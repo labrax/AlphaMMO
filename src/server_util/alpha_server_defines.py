@@ -3,6 +3,10 @@
 
 DATABASE_FILE = 'server.db'
 
+# PERFORMANCE settings
+SERVER_ITERATION_TIME = 1/60
+#
+
 # CONNECTION settings
 HOST_BIND = ''
 PORT_BIND = 1337

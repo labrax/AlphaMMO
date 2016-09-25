@@ -8,7 +8,7 @@ import socket
 import select
 import ssl
 
-from server_util.alpha_server_defines import HOST_BIND, PORT_BIND, MAX_SERVER_CONN, CERTIFICATE_FILE, KEY_FILE, SOCKET_BUFFER
+from server_util.alpha_server_defines import HOST_BIND, PORT_BIND, MAX_SERVER_CONN, CERTIFICATE_FILE, KEY_FILE, SERVER_ITERATION_TIME
 from server_util.server_map import AlphaServerMap
 
 from util.alpha_exceptions import SingletonViolated
@@ -46,14 +46,16 @@ class AlphaServer:
         # server setup
         self.server_map.start()
 
-        # start entities tasklet
-        for _ in range(5):
+        def start_npc():
             i = self.server_entities.create_random_npc()
-            print("NEW NPC AT", i.pos)
             self.server_map.set_entity(i)
             tasklet_object = AlphaServerNPCTasklet(self, i)
             self.tasklets_objects.append(tasklet_object)
             tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
+
+        # start entities tasklet
+        for _ in range(5):
+            start_npc()
 
         # server run
         self.server_socket.listen(MAX_SERVER_CONN)
@@ -62,7 +64,6 @@ class AlphaServer:
         stackless.run()
 
     def run(self):
-        ITERATION_TIME = 1/60
         print("Server is running.")
         while self.running:
             last_time = time.time()
@@ -85,8 +86,8 @@ class AlphaServer:
             stackless.schedule()
             elapsed = time.time() - last_time
             #print("FPS", 1/elapsed)
-            #if elapsed < ITERATION_TIME:
-            #   time.sleep(ITERATION_TIME - elapsed)
+            if elapsed < SERVER_ITERATION_TIME:
+               time.sleep(SERVER_ITERATION_TIME - elapsed)
 
         self.server_socket.close()
 

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import time
 
-from util.alpha_entities import Tile, Entity
+from util.alpha_entities import Tile
 from util.alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE
 
 
@@ -76,3 +75,8 @@ class AlphaServerMap:
                 and len(self.tiled_memory[pos[1]][pos[0]].entities) == 0:
             return True
         return False
+
+    def move_entity(self, entity, source, target):
+        self.tiled_memory[source[1]][source[0]].entities.remove(entity)
+        self.tiled_memory[target[1]][target[0]].entities.add(entity)
+
