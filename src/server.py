@@ -47,8 +47,9 @@ class AlphaServer:
         self.server_map.start()
 
         # start entities tasklet
-        for _ in range(50):
+        for _ in range(5):
             i = self.server_entities.create_random_npc()
+            print("NEW NPC AT", i.pos)
             self.server_map.set_entity(i)
             tasklet_object = AlphaServerNPCTasklet(self, i)
             self.tasklets_objects.append(tasklet_object)
@@ -84,8 +85,8 @@ class AlphaServer:
             stackless.schedule()
             elapsed = time.time() - last_time
             #print("FPS", 1/elapsed)
-            if elapsed < ITERATION_TIME:
-               time.sleep(ITERATION_TIME - elapsed)
+            #if elapsed < ITERATION_TIME:
+            #   time.sleep(ITERATION_TIME - elapsed)
 
         self.server_socket.close()
 

@@ -6,7 +6,7 @@ import stackless
 
 from server_util.server_tasklet import AlphaServerTasklet
 from util.alpha_protocol import AlphaProtocol
-from util.alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
+from util.alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
 
 
 class AlphaServerNPCTasklet(AlphaServerTasklet):
@@ -45,17 +45,17 @@ class AlphaServerNPCTasklet(AlphaServerTasklet):
                 if True:
                     if random.choice([True, False]):
                         if random.choice([True, False]):
-                            if 0 <= self.entity.pos[0] + 1 < GRID_MEMORY_SIZE[0] and 0 <= self.entity.pos[1] < GRID_MEMORY_SIZE[1]:
+                            if self.server.server_map.is_valid_movement([self.entity.pos[0] + 1, self.entity.pos[1]]):
                                 self.entity.set_movement(+1, 0)
                         else:
-                            if 0 <= self.entity.pos[0] - 1 < GRID_MEMORY_SIZE[0] and 0 <= self.entity.pos[1] < GRID_MEMORY_SIZE[1]:
+                            if self.server.server_map.is_valid_movement([self.entity.pos[0] - 1, self.entity.pos[1]]):
                                 self.entity.set_movement(-1, 0)
                     else:
                         if random.choice([True, False]):
-                            if 0 <= self.entity.pos[0] < GRID_MEMORY_SIZE[0] and 0 <= self.entity.pos[1] + 1 < GRID_MEMORY_SIZE[1]:
+                            if self.server.server_map.is_valid_movement([self.entity.pos[0], self.entity.pos[1] + 1]):
                                 self.entity.set_movement(0, +1)
                         else:
-                            if 0 <= self.entity.pos[0] < GRID_MEMORY_SIZE[0] and 0 <= self.entity.pos[1] - 1 < GRID_MEMORY_SIZE[1]:
+                            if self.server.server_map.is_valid_movement([self.entity.pos[0], self.entity.pos[1] - 1]):
                                 self.entity.set_movement(0, -1)
                     # push to all nearby
                     for i in self.server.get_nearby_entities(self.entity.entity_id):

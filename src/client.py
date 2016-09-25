@@ -77,8 +77,8 @@ class AlphaGameClient:
             waited = new_time - old_time
             old_time = new_time
             #print("FPS", 1/waited)
-            if waited < FPS:
-                 time.sleep(1.0 / (FPS - waited))
+            #if waited < FPS:
+            #     time.sleep(1.0 / (FPS - waited))
 
         self.client_states.running = False
         self.client_communication.running = False

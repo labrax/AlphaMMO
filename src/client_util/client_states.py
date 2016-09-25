@@ -209,6 +209,8 @@ class AlphaPlayMode:
         self.tiled_memory = [[Tile() for __ in range(GRID_MEMORY_SIZE[0])] for _ in range(GRID_MEMORY_SIZE[1])]
         self.map_center = None
         self.entities = dict()
+        self.key = {'up': False, 'down': False, 'right': False, 'left': False}
+        self.waiting_movement = False
 
         # resource loader starter
         self.rl = AlphaResourceLoader()
@@ -381,26 +383,53 @@ class AlphaPlayMode:
                     self.player_character.movement[0], self.player_character.movement[1])
                     self.player_character.start_movement = None
 
+            if not self.player_character.start_movement and not self.waiting_movement:
+                if self.key['left']:
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                    self.waiting_movement = True
+                elif self.key['right']:
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                    self.waiting_movement = True
+                elif self.key['up']:
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] - 1])
+                    self.waiting_movement = True
+                elif self.key['down']:
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] + 1])
+                    self.waiting_movement = True
+
     def notify(self, message):
         if isinstance(message, pygame.event.EventType):
             event = message
             # only try to move when another movement is already finished
-            if self.player_character and not self.player_character.start_movement:
+            if self.player_character:
                 if event.type == pygame.locals.KEYDOWN:
                     if event.key == pygame.K_LEFT:
-                        self.client_states.channel.push(
-                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                        self.key['left'] = True
+                        self.key['right'] = False
                     elif event.key == pygame.K_RIGHT:
-                        self.client_states.channel.push(
-                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                        self.key['left'] = False
+                        self.key['right'] = True
                     elif event.key == pygame.K_UP:
-                        self.client_states.channel.push(
-                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] - 1])
+                        self.key['up'] = True
+                        self.key['down'] = False
                     elif event.key == pygame.K_DOWN:
-                        self.client_states.channel.push(
-                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] + 1])
+                        self.key['up'] = False
+                        self.key['down'] = True
+                elif event.type == pygame.locals.KEYUP:
+                    if event.key == pygame.K_LEFT:
+                        self.key['left'] = False
+                    elif event.key == pygame.K_RIGHT:
+                        self.key['right'] = False
+                    elif event.key == pygame.K_UP:
+                        self.key['up'] = False
+                    elif event.key == pygame.K_DOWN:
+                        self.key['down'] = False
         else:
-            # print("States received", message)
+            print(self.__class__.__name__, "received", message)
             if message[0] == AlphaProtocol.SET_ENTITIES:
                 for i in message[1]:
                     self.add_entity(i)
@@ -415,6 +444,7 @@ class AlphaPlayMode:
                 self.add_entity(message[1])
             elif message[0] == AlphaProtocol.MOVING:
                 self.player_character.set_movement(message[1] - self.player_character.pos[0], message[2] - self.player_character.pos[1])
+                self.waiting_movement = False
             elif message[0] == AlphaProtocol.RECEIVE_MAP:
                 self.map_center = (message[1], message[2])
                 ret = message[3]

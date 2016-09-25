@@ -64,14 +64,14 @@ class Entity:
         self.defense = 1
 
         self.pos = (6, 6)
-        self.movement = (6, 6)
+        self.movement = None
         self.start_movement = None
         self.player_controlled = False
         self.name = ''
         self.entity_name_surface = None
 
     def set_movement(self, delta_x, delta_y, immediate=False):
-        self.movement = (self.movement[0] + delta_x, self.movement[1] + delta_y)
+        self.movement = (self.pos[0] + delta_x, self.pos[1] + delta_y)
         if immediate:
             self.start_movement = None
         else:
@@ -79,3 +79,24 @@ class Entity:
 
     def load(self, resource_loader):
         self.sprite = resource_loader.get_sprite(self.sprite[0], self.sprite[1], self.sprite[2])
+
+
+class AlphaEffect:
+    def __init__(self, sprites, repeats, duration):
+        self.sprites = sprites
+        self.repeats = repeats
+        self.duration = duration
+        self.first_time = time.time()
+
+    def load(self, resource_loader):
+        sprites = list()
+        for i in self.sprites:
+            sprites.append(resource_loader.get_sprite(i[0], i[1], i[2]))
+        self.sprites = sprites
+
+    def get_sprite(self):
+        curr_time = time.time()
+        if curr_time - self.first_time > self.duration * self.repeats:
+            return None
+        else:
+            return self.sprites((curr_time - self.first_time) % self.duration / len(self.sprites))

@@ -43,7 +43,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
 
     # message to client
     def to_client(self, message):
-        #print("To client", message)
+        print("To client", message)
         if check_valid(message, False):
             self.client_states.notify(message)
         else:
@@ -97,6 +97,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
                             while read:
                                 read = False
                                 if b' ' in self.socket_buffer:
+                                    read = True
                                     # when we receive a package first we get the length of the message, and then we
                                     # calculate from what we have received if there is everything on the buffer
                                     size = self.socket_buffer.split(b' ')[0]
@@ -110,6 +111,8 @@ class AlphaClientSocket(AlphaCommunicationChannel):
                                         self.socket_buffer = self.socket_buffer[len_size + 1 + size:]
                                         # print("Receiving...", current_read)
                                         self.to_client(pickle.loads(current_read))
+                                    else:
+                                        read = False
                         else:
                             self.on_error(self.__class__, 'Received no content', self.run, '', failed=True)
                     except Exception as e:

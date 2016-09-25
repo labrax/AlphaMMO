@@ -11,8 +11,7 @@ from util.alpha_exceptions import InvalidLogin, InvalidPassword
 from server_util.server_tasklet import AlphaServerTasklet
 from server_util.alpha_server_defines import SOCKET_BUFFER
 from util.alpha_protocol import AlphaProtocol, retrieve_with_types
-from util.alpha_defines import GRID_MEMORY_SIZE, GRID_MEMORY_SIZE as CLIENT_GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
-from util.alpha_entities import Tile
+from util.alpha_defines import SPRITE_LEN as TILE_SIZE
 
 
 class AlphaServerPlayerTasklet(AlphaServerTasklet):
@@ -66,7 +65,11 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             while self.queue.qsize() > 0:
                 data = pickle.dumps(self.queue.get())
                 # print("Server sending", data)
-                send_buffer += str(len(data)).encode() + b' ' + data
+                next_packet = str(len(data)).encode() + b' ' + data
+                if len(send_buffer) > 0 and len(send_buffer) + len(next_packet) > SOCKET_BUFFER:
+                    self.client_socket.send(send_buffer)
+                    send_buffer = b''
+                send_buffer += next_packet
             if len(send_buffer) > 0:
                 self.client_socket.send(send_buffer)
         except Exception as e:
@@ -88,7 +91,7 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                         self.entity)
                     self.entity.start_movement = None
 
-                    ret = self.prepare_map(self.entity.pos[0], self.entity.pos[1])
+                    ret = self.server.server_map.prepare_map(self.entity.pos[0], self.entity.pos[1])
                     self.channel.push(
                         [AlphaProtocol.RECEIVE_MAP, self.entity.pos[0], self.entity.pos[1], ret])
 
@@ -121,21 +124,8 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             # this way when we lose connection to the server the player gets disconnected
         stackless.schedule_remove()
 
-    def prepare_map(self, player_x, player_y):
-        ret = [[Tile() for _2 in range(CLIENT_GRID_MEMORY_SIZE[0])] for _ in range(CLIENT_GRID_MEMORY_SIZE[1])]
-        for j in range(player_y - int(CLIENT_GRID_MEMORY_SIZE[1] / 2),
-                       player_y + int(CLIENT_GRID_MEMORY_SIZE[1] / 2)):
-            for i in range(player_x - int(CLIENT_GRID_MEMORY_SIZE[0] / 2),
-                           player_x + int(CLIENT_GRID_MEMORY_SIZE[0] / 2)):
-                if i < 0 or j < 0 or i >= GRID_MEMORY_SIZE[0] or j >= GRID_MEMORY_SIZE[1]:
-                    continue
-                ret[j - (player_y - int(CLIENT_GRID_MEMORY_SIZE[1] / 2))][
-                    i - int(player_x - int(CLIENT_GRID_MEMORY_SIZE[0] / 2))] = \
-                    self.server.server_map.tiled_memory[j][i]
-        return ret
-
     def to_server(self, message):
-        print("server recv", self.session_id, message)
+        print(self.__class__.__name__, "SERVER RAW", self.session_id, message)
         try:
             message = retrieve_with_types(message, True)
             print('SERVER RECEIVED', message)
@@ -158,9 +148,9 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
 
                 try:
                     if self.server.server_database.login_account(user, passwd):
-                        player_x = 6
-                        player_y = 6
                         self.entity = self.server.server_entities.create_random_player()
+                        player_x = self.entity.pos[0]
+                        player_y = self.entity.pos[1]
                         self.entity.name = message[1]
                         self.session_id = self.entity.entity_id
                         self.server.set_tasklet(self.entity.entity_id, self)
@@ -170,7 +160,7 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                         self.channel.push([AlphaProtocol.RECEIVE_PLAYER, self.server.get_entity(self.session_id)])
                         self.channel.push([AlphaProtocol.TELEPORT, player_x, player_y])
 
-                        ret = self.prepare_map(player_x, player_y)
+                        ret = self.server.server_map.prepare_map(player_x, player_y)
                         self.channel.push([AlphaProtocol.RECEIVE_MAP, player_x, player_y, ret])
 
                         self.channel.push([AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(self.entity.entity_id)])
@@ -191,8 +181,9 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             elif message[0] == AlphaProtocol.REQUEST_MOVE:
                 player_x = int(message[1])
                 player_y = int(message[2])
-                if -1 <= player_x - self.entity.pos[0] <= 1 and -1 <= player_y - self.entity.pos[1] <= 1 and not self.entity.start_movement:
-                    print('valid', self.entity.pos, (player_x, player_y))
+                if -1 <= player_x - self.entity.pos[0] <= 1 and -1 <= player_y - self.entity.pos[1] <= 1 and not self.entity.start_movement and self.server.server_map.is_valid_movement((player_x, player_y))\
+                        and (player_x - self.entity.pos[0] != 0 or player_y - self.entity.pos[1] != 0):
+                    #print('valid', self.entity.pos, (player_x, player_y))
 
                     self.entity.set_movement(player_x - self.entity.pos[0], player_y - self.entity.pos[1])
                     self.channel.push([AlphaProtocol.MOVING, player_x, player_y])
@@ -203,9 +194,9 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                             if goal:
                                 goal.channel.push([AlphaProtocol.SET_ENTITIES, [self.entity]])
                 else:
-                    print('invalid', self.entity.pos, (player_x, player_y))
+                    #print('invalid', self.entity.pos, (player_x, player_y))
                     self.channel.push([AlphaProtocol.MOVING, self.entity.pos[0], self.entity.pos[1]])
-                    ret = self.prepare_map(self.entity.pos[0], self.entity.pos[1])
+                    ret = self.server.server_map.prepare_map(self.entity.pos[0], self.entity.pos[1])
                     self.channel.push([AlphaProtocol.RECEIVE_MAP, self.entity.pos[0], self.entity.pos[1], ret])
             else:
                 print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)

@@ -23,12 +23,13 @@ class AlphaServerEntities:
 
     def create_random_player(self):
         entity = self.create_random()
-        entity.pos = (6, 6)
+        entity.pos = (8, 8)
         entity.sprite = ('roguelikeChar_transparent.png', random.randint(0, 1), random.randint(5, 11))
         entity.entity_id = self.get_entity_id()
-        entity.speed_pixels = 16 * 3
+        entity.speed_pixels = 16 * 5
         entity.player_controlled = True
         entity.name = "-"
+        print("started at", entity.pos)
         return entity
 
     def create_random_npc(self):
