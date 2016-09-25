@@ -2,7 +2,7 @@
 
 import random
 
-from util.alpha_entities import Entity
+from util.alpha_entities import Entity, AlphaEffect
 
 
 class AlphaServerEntities:
@@ -37,3 +37,10 @@ class AlphaServerEntities:
         entity.pos = (random.randint(2, 10), random.randint(2, 10))
         entity.name = random.choice(['Mark', 'Joe', 'Josh', 'Mary'])
         return entity
+
+    def create_effect(self, pos):
+        effect = AlphaEffect(pos, [('roguelikeChar_transparent.png', 0, 0),
+                                   ('roguelikeChar_transparent.png', 0, 1),
+                                   ('roguelikeChar_transparent.png', 0, 2),
+                                   ('roguelikeChar_transparent.png', 0, 3)], 2, 1)
+        return effect

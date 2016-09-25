@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from util.alpha_entities import Entity, Tile
+from util.alpha_entities import Entity, Tile, AlphaEffect
 from enum import Enum
 import os
 import sys
@@ -10,15 +10,19 @@ class AlphaProtocol(Enum):
     LOGIN = 0
     LOGOUT = -1
     STATUS = 1
+    SERVER_MESSAGE = 3
     REGISTER = 2
 
     REQUEST_MOVE = 10
     REQUEST_SPEAK = 11
+    REQUEST_ACTION = 12
 
     TELEPORT = 200
     MOVING = 20
     MOVING_STATUS = 21
     SPEAKING = 22
+    ACTION = 29
+    EFFECT = 30
 
     SET_ENTITIES = 3000
     REPLACE_ENTITIES = 3001
@@ -41,15 +45,19 @@ class AlphaProtocol(Enum):
 protocol_format = dict(LOGIN=(str, str),  # user, passwd
                        LOGOUT=tuple(),
                        STATUS=(int, int),  # 0 denied/offline, 1 login granted, -2 wrong user/passwd, -3 server overload AND session_id
+                       SERVER_MESSAGE=(str,),  # server message for multiple information
                        REGISTER=(str, str, str),  # account, password, email
 
                        REQUEST_MOVE=(int, int),  # coordinates
                        REQUEST_SPEAK=(str,),  # text
+                       REQUEST_ACTION=(int, int, int, int),  # action id, position, entity id
 
                        TELEPORT=(int, int),  # coordinates
                        MOVING=(int, int),  # start the character movement
                        MOVING_STATUS=(int, int, int),  # status, coordinates if the player started the movement return if success or not (move back)
                        SPEAKING=(str, int, int, int),  # text, type, coordinates
+                       ACTION=(int,),  # status 0: denied, 1: doing/success
+                       EFFECT=(AlphaEffect, int, int),  # position
 
                        SET_ENTITIES=(list, [Entity]),  #list of visible entities
                        REPLACE_ENTITIES=(list, [Entity]),
@@ -76,6 +84,7 @@ server_accepts = dict(LOGIN=True,
 
                       REQUEST_MOVE=True,
                       REQUEST_SPEAK=True,
+                      REQUEST_ACTION=True,
 
                       PING=True,
                       PONG=True,
@@ -84,11 +93,14 @@ server_accepts = dict(LOGIN=True,
                       )
 
 client_accepts = dict(STATUS=True,  # login mode
+                      SERVER_MESSAGE=True,
 
                       TELEPORT=True,  # play
                       MOVING=True,
                       MOVING_STATUS=True,
                       SPEAKING=True,
+                      ACTION=True,
+                      EFFECT=True,
 
                       SET_ENTITIES=True,
                       REPLACE_ENTITIES=True,

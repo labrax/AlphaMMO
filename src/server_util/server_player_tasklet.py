@@ -198,6 +198,16 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                     self.channel.push([AlphaProtocol.MOVING, self.entity.pos[0], self.entity.pos[1]])
                     ret = self.server.server_map.prepare_map(self.entity.pos[0], self.entity.pos[1])
                     self.channel.push([AlphaProtocol.RECEIVE_MAP, self.entity.pos[0], self.entity.pos[1], ret])
+            elif message[0] == AlphaProtocol.REQUEST_ACTION:
+                self.channel.push([AlphaProtocol.ACTION, 1])
+                effect = self.server.server_entities.create_effect((message[2], message[3]))
+
+                self.channel.push([AlphaProtocol.EFFECT, effect, message[2], message[3]])
+                for i in self.server.get_nearby_entities(self.entity.entity_id):
+                    if i.player_controlled:
+                        goal = self.server.get_tasklet(i.entity_id)
+                        if goal:
+                            goal.channel.push([AlphaProtocol.EFFECT, effect, message[2], message[3]])
             else:
                 print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)
         except Exception as e:

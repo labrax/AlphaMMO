@@ -66,6 +66,7 @@ class Entity:
         self.pos = (6, 6)
         self.movement = None
         self.start_movement = None
+        self.start_action = None
         self.player_controlled = False
         self.name = ''
         self.entity_name_surface = None
@@ -82,7 +83,8 @@ class Entity:
 
 
 class AlphaEffect:
-    def __init__(self, sprites, repeats, duration):
+    def __init__(self, pos, sprites, repeats, duration):
+        self.pos = pos
         self.sprites = sprites
         self.repeats = repeats
         self.duration = duration
@@ -99,4 +101,6 @@ class AlphaEffect:
         if curr_time - self.first_time > self.duration * self.repeats:
             return None
         else:
-            return self.sprites((curr_time - self.first_time) % self.duration / len(self.sprites))
+            time_at_current_loop = (curr_time - self.first_time) % self.duration
+            curr = int(time_at_current_loop/self.duration * len(self.sprites))
+            return self.sprites[curr]

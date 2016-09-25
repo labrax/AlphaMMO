@@ -209,8 +209,10 @@ class AlphaPlayMode:
         self.tiled_memory = [[Tile() for __ in range(GRID_MEMORY_SIZE[0])] for _ in range(GRID_MEMORY_SIZE[1])]
         self.map_center = None
         self.entities = dict()
-        self.key = {'up': False, 'down': False, 'right': False, 'left': False}
+        self.effects = dict()
+        self.key = {'up': False, 'down': False, 'right': False, 'left': False, 'space': False}
         self.waiting_movement = False
+        self.waiting_action = False
 
         # resource loader starter
         self.rl = AlphaResourceLoader()
@@ -331,6 +333,21 @@ class AlphaPlayMode:
                         pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN),
                          factor * (ref_movement_y + entity_ref_movement_y + (
                          pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN)))
+
+                    # TODO: draw hp & mp
+                    '''if DRAW_HP:
+                        pygame.draw.rect(self.players_and_texts, (255, 255, 255), pygame.Rect())
+                        self.players_and_texts.blit(i.entity_name_surface,
+                                                    (- i.entity_name_surface.get_width() / 2 + factor * (
+                                                        SPRITE_LEN / 2 + ref_movement_x + entity_ref_movement_x + (
+                                                            pos_to_draw[0] - (
+                                                                GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN),
+                                                     - i.entity_name_surface.get_height() / 2 + factor * (
+                                                         -1 + ref_movement_y + entity_ref_movement_y + (
+                                                             pos_to_draw[1] - (
+                                                                 GRID_MEMORY_SIZE[1] - GRID_SIZE[
+                                                                     1]) / 2) * SPRITE_LEN)))'''
+
                     if DRAW_PLAYERS_NAME:
                         self.players_and_texts.blit(i.entity_name_surface,
                                                     (- i.entity_name_surface.get_width() / 2 + factor * (
@@ -361,6 +378,25 @@ class AlphaPlayMode:
             entity = self.texts_on_screen[i][2]
             dest.blit(message, (0, message.get_height() * i))
 
+        # draw effects:
+        will_remove = list()
+        for i, j in self.effects.items():
+            sprite = j.get_sprite()
+            if not sprite:
+                will_remove.append(i)
+                continue
+            else:
+                pos_to_draw = (j.pos[0] - (self.map_center[0] - int(GRID_SIZE[0] / 2) - 2),
+                               j.pos[1] - (self.map_center[1] - int(GRID_SIZE[1] / 2) - 2))
+                self.players_and_texts.blit(
+                    pygame.transform.scale(sprite, (int(SPRITE_LEN * factor),
+                                                    int(SPRITE_LEN * factor))),
+                    (factor * (ref_movement_x + (pos_to_draw[0] - (GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) / 2) * SPRITE_LEN),
+                    factor * (ref_movement_y + (pos_to_draw[1] - (GRID_MEMORY_SIZE[1] - GRID_SIZE[1]) / 2) * SPRITE_LEN))
+                )
+        for i in will_remove:
+            self.effects.pop(i)
+
         # draw players and texts to screen (from the temporary surface)
         dest.blit(self.players_and_texts, (self.pos[0], self.pos[1]))
 
@@ -384,22 +420,25 @@ class AlphaPlayMode:
                     self.player_character.start_movement = None
 
             if not self.player_character.start_movement and not self.waiting_movement:
+                def _request_movement(pos):
+                    self.client_states.channel.push(
+                        [AlphaProtocol.REQUEST_MOVE, pos[0], pos[1]])
+                    self.waiting_movement = True
                 if self.key['left']:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] - 1, self.player_character.pos[1]])
-                    self.waiting_movement = True
+                    _request_movement([self.player_character.pos[0] - 1, self.player_character.pos[1]])
                 elif self.key['right']:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] + 1, self.player_character.pos[1]])
-                    self.waiting_movement = True
+                    _request_movement([self.player_character.pos[0] + 1, self.player_character.pos[1]])
                 elif self.key['up']:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] - 1])
-                    self.waiting_movement = True
+                    _request_movement([self.player_character.pos[0], self.player_character.pos[1] - 1])
                 elif self.key['down']:
+                    _request_movement([self.player_character.pos[0], self.player_character.pos[1] + 1])
+
+            if not self.player_character.start_action and not self.waiting_action:
+                if self.key['space']:
                     self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] + 1])
-                    self.waiting_movement = True
+                        [AlphaProtocol.REQUEST_ACTION, 1, self.player_character.pos[0], self.player_character.pos[1], self.player_character.entity_id]
+                    )
+                    self.waiting_action = True
 
     def notify(self, message):
         if isinstance(message, pygame.event.EventType):
@@ -419,6 +458,8 @@ class AlphaPlayMode:
                     elif event.key == pygame.K_DOWN:
                         self.key['up'] = False
                         self.key['down'] = True
+                    elif event.key == pygame.K_SPACE:
+                        self.key['space'] = True
                 elif event.type == pygame.locals.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.key['left'] = False
@@ -428,6 +469,8 @@ class AlphaPlayMode:
                         self.key['up'] = False
                     elif event.key == pygame.K_DOWN:
                         self.key['down'] = False
+                    elif event.key == pygame.K_SPACE:
+                        self.key['space'] = False
         else:
             print(self.__class__.__name__, "received", message)
             if message[0] == AlphaProtocol.SET_ENTITIES:
@@ -445,6 +488,12 @@ class AlphaPlayMode:
             elif message[0] == AlphaProtocol.MOVING:
                 self.player_character.set_movement(message[1] - self.player_character.pos[0], message[2] - self.player_character.pos[1])
                 self.waiting_movement = False
+            elif message[0] == AlphaProtocol.ACTION:
+                self.waiting_action = False
+            elif message[0] == AlphaProtocol.EFFECT:
+                effect = message[1]
+                effect.load(self.rl)
+                self.effects[effect] = effect
             elif message[0] == AlphaProtocol.RECEIVE_MAP:
                 self.map_center = (message[1], message[2])
                 ret = message[3]
