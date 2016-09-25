@@ -11,7 +11,6 @@ from client_util.client_input_handler import ClientInput
 from client_util.client_screen import ClientScreen
 from client_util.client_states import ClientStates
 from client_util.client_socket import AlphaClientSocket
-from server_simple import ClientAsServer
 from util.alpha_communication import AlphaCommunication, AlphaCommunicationChannel
 from util.alpha_defines import FPS
 

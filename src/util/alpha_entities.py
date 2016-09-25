@@ -9,6 +9,7 @@ class Tile:
         self.decor_objects = list()
         self.items = list()
         self.entities = set()
+        self.can_walk = True
 
     def __iter__(self):
         return self.iter()

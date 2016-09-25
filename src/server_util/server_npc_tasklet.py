@@ -6,7 +6,6 @@ import stackless
 
 from server_util.server_tasklet import AlphaServerTasklet
 from util.alpha_protocol import AlphaProtocol
-from util.alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
 
 
 class AlphaServerNPCTasklet(AlphaServerTasklet):

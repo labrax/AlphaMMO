@@ -240,13 +240,25 @@ class AlphaPlayMode:
                         [AlphaProtocol.REQUEST_MOVE, pos[0], pos[1]])
                     self.waiting_movement = True
                 if self.key['left']:
-                    _request_movement([self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                    if self.tiled_memory[self.map_center[0] - self.player_character.pos[0] - 1][self.map_center[1] - self.player_character.pos[1]].can_walk:
+                        _request_movement([self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                    else:
+                        self.key['left'] = False
                 elif self.key['right']:
-                    _request_movement([self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                    if self.tiled_memory[self.map_center[0] - self.player_character.pos[0] + 1][self.map_center[1] - self.player_character.pos[1]].can_walk:
+                        _request_movement([self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                    else:
+                        self.key['right'] = False
                 elif self.key['up']:
-                    _request_movement([self.player_character.pos[0], self.player_character.pos[1] - 1])
+                    if self.tiled_memory[self.map_center[0] - self.player_character.pos[0]][self.map_center[1] - self.player_character.pos[1] - 1].can_walk:
+                        _request_movement([self.player_character.pos[0], self.player_character.pos[1] - 1])
+                    else:
+                        self.key['up'] = False
                 elif self.key['down']:
-                    _request_movement([self.player_character.pos[0], self.player_character.pos[1] + 1])
+                    if self.tiled_memory[self.map_center[0] - self.player_character.pos[0]][self.map_center[1] - self.player_character.pos[1] + 1].can_walk:
+                        _request_movement([self.player_character.pos[0], self.player_character.pos[1] + 1])
+                    else:
+                        self.key['down'] = False
 
             if not self.player_character.start_action and not self.waiting_action:
                 if self.key['space']:
