@@ -11,10 +11,12 @@ from util.alpha_resource_loader import AlphaResourceLoader
 
 # draw imports
 import pygame
+from util.alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, transparent, DRAW_PLAYERS_NAME, SIMPLE_NAME
 from client_util.client_ui import AlphaWindow, AlphaLabel, AlphaEditBox, AlphaButton
-from util.alpha_defines import START_RESOLUTION, SPRITE_LEN, GRID_SIZE, GRID_MEMORY_SIZE, transparent, DRAW_PLAYERS_NAME
-from client_util.client_internal_protocol import AlphaClientProtocol, AlphaClientProtocolValues
+
+# internal and external protocol
 from util.alpha_protocol import AlphaProtocol
+from client_util.client_internal_protocol import AlphaClientProtocol, AlphaClientProtocolValues
 
 
 class ClientStates(AlphaCommunicationMember):
@@ -22,7 +24,7 @@ class ClientStates(AlphaCommunicationMember):
         # server token
         self.session_id = None  # TODO: use later?
         self.running = True
-        self.mode = AlphaRegisterMode(START_RESOLUTION, self)
+        self.mode = AlphaStartMode(START_RESOLUTION, self)
 
         self.channel = None
         self.logged = False
@@ -44,7 +46,11 @@ class AlphaStartMode:
         self.current_size = screen_size
         self.client_states = client_states
         # screen objects
-        self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 4), "START")
+        self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 2), SIMPLE_NAME)
+        ab = AlphaButton((0, 29 * 1), (150, 29), 'REGISTER', callback=self.register_window)
+        ab2 = AlphaButton((150, 29 * 1), (149, 29), 'LOGIN', callback=self.login_window)
+        self.aw.add_component([ab, ab2])
+        self.aw.enter = ab2
         self.prepare()
 
     def resize(self, event):
@@ -66,6 +72,12 @@ class AlphaStartMode:
             if self.aw.notify(message):
                 self.aw.update()
 
+    def register_window(self):
+        self.client_states.mode = AlphaRegisterMode(self.current_size, self.client_states)
+
+    def login_window(self):
+        self.client_states.mode = AlphaLoginMode(self.current_size, self.client_states)
+
 
 class AlphaRegisterMode:
     def __init__(self, screen_size, client_states):
@@ -83,7 +95,7 @@ class AlphaRegisterMode:
         ae3 = AlphaEditBox((3 + 150, 29 * 3), (145, 24), '', password=True)
         ae4 = AlphaEditBox((3 + 150, 29 * 4), (145, 24), '')
 
-        ab = AlphaButton((0, 29 * 5), (150, 29), 'CANCEL', callback=print, callback_args=('Cancel button',))
+        ab = AlphaButton((0, 29 * 5), (150, 29), 'CANCEL', callback=self.cancel)
         ab2 = AlphaButton((150, 29 * 5), (149, 29), 'OK', callback=self.try_register, callback_args=(ae, ae2, ae3, ae4))
         self.aw.escape = ab
         self.aw.enter = ab2
@@ -125,6 +137,9 @@ class AlphaRegisterMode:
             # todo: better notify that dont match
             print("Password doesn't match")
 
+    def cancel(self):
+        self.client_states.mode = AlphaStartMode(self.current_size, self.client_states)
+
 
 class AlphaLoginMode:
     def __init__(self, screen_size, client_states):
@@ -137,7 +152,7 @@ class AlphaLoginMode:
         ae = AlphaEditBox((3 + 150, 29), (145, 24), '')
         ae2 = AlphaEditBox((3 + 150, 29 * 2), (145, 24), '', password=True)
 
-        ab = AlphaButton((0, 29 * 3), (150, 29), 'CANCEL', callback=print, callback_args=('Cancel button',))
+        ab = AlphaButton((0, 29 * 3), (150, 29), 'CANCEL', callback=self.cancel)
         ab2 = AlphaButton((150, 29 * 3), (149, 29), 'OK', callback=self.try_login, callback_args=(ae, ae2,))
         self.aw.escape = ab
         self.aw.enter = ab2
@@ -180,6 +195,9 @@ class AlphaLoginMode:
 
     def try_login(self, user_ui, passwd_ui):
         self.client_states.channel.push([AlphaClientProtocol.TRY_LOGIN, user_ui.text, passwd_ui.text])
+
+    def cancel(self):
+        self.client_states.mode = AlphaStartMode(self.current_size, self.client_states)
 
 
 class AlphaPlayMode:

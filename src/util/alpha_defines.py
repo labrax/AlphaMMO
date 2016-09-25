@@ -16,6 +16,8 @@ START_RESOLUTION = (4 * SPRITE_LEN * GRID_SIZE[0], 4 * SPRITE_LEN * GRID_SIZE[1]
 
 FPS = 60
 version = 'almost 0.00001a'
+SIMPLE_NAME = 'AlphaMMO'
+WINDOW_TITLE = 'AlphaMMO Client ' + str(version)
 
 FONT_FILE = '04B_03__.TTF'
 FONT_SIZE = 32

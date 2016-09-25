@@ -5,7 +5,7 @@ import time
 import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE
 
-from util.alpha_defines import START_RESOLUTION, gray, version
+from util.alpha_defines import START_RESOLUTION, gray, WINDOW_TITLE
 
 
 class ClientScreen:
@@ -13,7 +13,7 @@ class ClientScreen:
         # start screen
         self.current_size = START_RESOLUTION
         self.screen = pygame.display.set_mode(self.current_size, HWSURFACE | DOUBLEBUF | RESIZABLE)
-        pygame.display.set_caption('AlphaMMO Client ' + str(version))
+        pygame.display.set_caption(WINDOW_TITLE)
         pygame.display.flip()
 
     def prepare(self):

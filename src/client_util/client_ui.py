@@ -109,8 +109,12 @@ class AlphaWindow(AlphaGameUI):
             if self.selected:
                 return self.selected.notify(event)
         if event.type == MOUSEBUTTONDOWN:
-            # todo: soon
-            pass
+            event_x, event_y = pygame.mouse.get_pos()
+            for i in self.components.values():
+                if i.pos[0] <= event_x - self.pos[0] <= i.pos[0] + i.size[0] and i.pos[1] <= event_y - self.pos[1] <= i.pos[1] + i.size[1]:
+                    self.selected = i
+                    i.notify(event)
+                    return True
 
 
 class AlphaLabel(AlphaGameUI):
@@ -139,7 +143,9 @@ class AlphaEditBox(AlphaLabel):
 
     def notify(self, event):
         if event.type == KEYDOWN:
-            if pygame.key.get_mods() & KMOD_SHIFT:
+            if pygame.key.get_mods() & KMOD_SHIFT and event.key in [pygame.K_0, pygame.K_1, pygame.K_2,
+                                                                    pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6,
+                                                                    pygame.K_7, pygame.K_8, pygame.K_9]:
                 if event.key == pygame.K_2:
                     self.text += '@'
                     return True
