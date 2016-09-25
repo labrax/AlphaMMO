@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-
 import socket
-import select
 import ssl
-import pickle
 
 import stackless
 
@@ -14,6 +9,7 @@ from util.alpha_communication import AlphaCommunicationChannel
 from util.alpha_defines import SERVER_IP, SERVER_PORT, SOCKET_BUFFER, SOCKET_TIMEOUT
 from client_util.client_internal_protocol import AlphaClientProtocol, AlphaClientProtocolValues
 from util.alpha_protocol import AlphaProtocol, check_valid
+from util.alpha_socket_comm import send_receive
 
 
 class AlphaClientSocket(AlphaCommunicationChannel):
@@ -86,49 +82,6 @@ class AlphaClientSocket(AlphaCommunicationChannel):
                 if self.state == AlphaClientProtocolValues.TRYING_CONNECTION:
                     self.start()
                     continue
-                rr, rw, err = select.select([self.server_socket], list(), list(), 0)
-                if len(rr) > 0:
-                    try:
-                        input = self.server_socket.recv(SOCKET_BUFFER)
-                        if input:
-                            self.socket_buffer += input
-                            # read message one by one
-                            read = True
-                            while read:
-                                read = False
-                                if b' ' in self.socket_buffer:
-                                    read = True
-                                    # when we receive a package first we get the length of the message, and then we
-                                    # calculate from what we have received if there is everything on the buffer
-                                    size = self.socket_buffer.split(b' ')[0]
-                                    len_size = len(size)
-
-                                    size = int(size)
-
-                                    if len_size + 1 + size <= len(self.socket_buffer):
-                                        read = True
-                                        current_read = self.socket_buffer[len_size + 1: len_size + 1 + size]
-                                        self.socket_buffer = self.socket_buffer[len_size + 1 + size:]
-                                        # print("Receiving...", current_read)
-                                        self.to_client(pickle.loads(current_read))
-                                    else:
-                                        read = False
-                        else:
-                            self.on_error(self.__class__, 'Received no content', self.run, '', failed=True)
-                    except Exception as e:
-                        exc_type, exc_obj, exc_tb = sys.exc_info()
-                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                        self.on_error(exc_type, e, fname, exc_tb.tb_lineno)
-                try:
-                    while self.queue.qsize() > 0:
-                        qval = self.queue.get()
-                        data = str(qval[0].value).encode() + b' ' + b' '.join([str(i).encode() for i in qval[1:]])
-                        # data = b' '.join([str(i).encode() for i in self.queue.get()])
-                        # print("Socket sending", data)
-                        self.server_socket.send(str(len(data)).encode() + b' ' + data)
-                except Exception as e:
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    self.on_error(exc_type, e, fname, exc_tb.tb_lineno)
+                send_receive(self, False)
             stackless.schedule()
         stackless.schedule_remove()

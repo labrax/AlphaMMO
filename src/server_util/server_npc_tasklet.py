@@ -11,14 +11,16 @@ from util.alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN as TILE_SIZE
 
 class AlphaServerNPCTasklet(AlphaServerTasklet):
     def __init__(self, server, entity):
-        super(AlphaServerNPCTasklet, self).__init__()
+        super(AlphaServerNPCTasklet, self).__init__(server)
         self.entity = entity
-        self.server = server
+        self.active = True
+
+    def iterate(self):
+        super(AlphaServerNPCTasklet, self).iterate()
 
     def run(self):
         self.last_time = time.time()
         while self.running:
-            this_time = time.time()
             '''if time.time() - self.last_time > 8:
                 # push to all nearby
                 for i in self.server.get_nearby_entities(self.entity.entity_id):
@@ -27,21 +29,8 @@ class AlphaServerNPCTasklet(AlphaServerTasklet):
                         goal.channel.push(
                             ['SAY', 'Hello?', self.entity])
                 self.last_time = time.time()'''
-
-            if self.entity.start_movement:
-                if (this_time - self.entity.start_movement) * self.entity.speed_pixels > TILE_SIZE:
-                    self.server.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.remove(self.entity)
-                    self.entity.pos = (self.entity.movement[0], self.entity.movement[1])
-                    self.server.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.add(self.entity)
-                    self.entity.start_movement = None
-                    # push to all nearby
-                    for i in self.server.get_nearby_entities(self.entity.entity_id):
-                        if i.player_controlled:
-                            goal = self.server.get_tasklet(i.entity_id)
-                            if goal:
-                                goal.channel.push(
-                                    [AlphaProtocol.SET_ENTITIES, [self.entity]])
-            else:
+            self.iterate()
+            if not self.entity.start_movement:
                 if True:
                     if random.choice([True, False]):
                         if random.choice([True, False]):
