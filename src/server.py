@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
 import stackless
@@ -44,7 +45,7 @@ class AlphaServer:
         self.server_map.start()
 
         # start entities tasklet
-        for _ in range(1):
+        for _ in range(50):
             i = self.server_entities.create_random_npc()
             self.server_map.set_entity(i)
             tasklet_object = AlphaServerNPCTasklet(self, i)
@@ -58,6 +59,7 @@ class AlphaServer:
 
     def run(self):
         ITERATION_TIME = 1/60
+        print("Server is running.")
         while self.running:
             last_time = time.time()
             rr, rw, err = select.select([self.server_socket], list(), list(), 0)

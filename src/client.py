@@ -76,8 +76,8 @@ class AlphaGameClient:
             new_time = pygame.time.get_ticks()
             waited = new_time - old_time
             old_time = new_time
-            if waited < FPS:
-                 time.sleep(1.0 / (FPS - waited))
+            #if waited < FPS:
+            #     time.sleep(1.0 / (FPS - waited))
 
         self.client_states.running = False
         self.client_communication.running = False

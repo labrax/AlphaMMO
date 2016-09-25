@@ -53,5 +53,5 @@ class AlphaServerMap:
         self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.add(entity)
 
     def remove_entity(self, entity):
-        self.all_entities.pop(entity.entity_id)
+        entity = self.all_entities.pop(entity.entity_id)
         self.tiled_memory[entity.pos[1]][entity.pos[0]].entities.remove(entity)

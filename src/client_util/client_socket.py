@@ -43,7 +43,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
 
     # message to client
     def to_client(self, message):
-        # print("To client", message)
+        #print("To client", message)
         if check_valid(message, False):
             self.client_states.notify(message)
         else:
@@ -54,7 +54,7 @@ class AlphaClientSocket(AlphaCommunicationChannel):
 
     # message to server
     def notify(self, message):
-        print("Socket received", message)
+        #print("Socket received", message)
         if message[0] == AlphaClientProtocol.TRY_LOGIN:
             # todo: implement
             self.push([AlphaProtocol.LOGIN, message[1], message[2]])

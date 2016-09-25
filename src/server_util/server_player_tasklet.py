@@ -81,13 +81,18 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                     self.server.server_map.tiled_memory[self.entity.pos[1]][self.entity.pos[0]].entities.add(
                         self.entity)
                     self.entity.start_movement = None
+
+                    ret = self.prepare_map(self.entity.pos[0], self.entity.pos[1])
+                    self.channel.push(
+                        [AlphaProtocol.RECEIVE_MAP, self.entity.pos[0], self.entity.pos[1], ret])
+
                     # push to all nearby
                     for i in self.server.get_nearby_entities(self.entity.entity_id):
                         if i.player_controlled:
                             goal = self.server.get_tasklet(i.entity_id)
                             if goal:
                                 goal.channel.push(
-                                    [AlphaProtocol.SET_ENTITIES, [self.entity]])
+                                    [AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(i.entity_id)])
 
     def run(self):
         while self.running:
@@ -95,10 +100,17 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             self.comm()
             stackless.schedule()
         self.client_socket.close()
-        try:
-            self.server.server_map.remove_entity(self.entity)
-        except:
-            pass
+        # we will get the list of nearbies to notify upon logout:
+        nearby = self.server.get_nearby_entities(self.entity.entity_id)
+        self.server.server_map.remove_entity(self.entity)
+
+        # notify nearbies
+        for i in nearby:
+            if i.player_controlled:
+                goal = self.server.get_tasklet(i.entity_id)
+                if goal:
+                    goal.channel.push(
+                        [AlphaProtocol.REPLACE_ENTITIES, self.server.get_nearby_entities(i.entity_id)])
         # this way when we lose connection to the server the player gets disconnected
         stackless.schedule_remove()
 
@@ -138,17 +150,24 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
 
                 ret = self.prepare_map(player_x, player_y)
                 self.channel.push([AlphaProtocol.RECEIVE_MAP, player_x, player_y, ret])
+
+                self.channel.push([AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(self.entity.entity_id)])
+
+                for i in self.server.get_nearby_entities(self.entity.entity_id):
+                    if i.player_controlled:
+                        goal = self.server.get_tasklet(i.entity_id)
+                        if goal:
+                            goal.channel.push([AlphaProtocol.SET_ENTITIES, [self.entity]])
+
             elif message[0] == AlphaProtocol.REQUEST_MOVE:
                 player_x = int(message[1])
                 player_y = int(message[2])
                 if -1 <= player_x - self.entity.pos[0] <= 1 and -1 <= player_y - self.entity.pos[1] <= 1 and not self.entity.start_movement:
                     print('valid', self.entity.pos, (player_x, player_y))
-                    ret = self.prepare_map(player_x, player_y)
 
                     self.entity.set_movement(player_x - self.entity.pos[0], player_y - self.entity.pos[1])
                     self.channel.push([AlphaProtocol.MOVING, player_x, player_y])
-                    self.channel.push([AlphaProtocol.RECEIVE_MAP, player_x, player_y, ret])
-                    self.channel.push([AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(self.session_id)])
+                    self.channel.push([AlphaProtocol.SET_ENTITIES, self.server.get_nearby_entities(self.entity.entity_id)])
                     for i in self.server.get_nearby_entities(self.entity.entity_id):
                         if i.player_controlled:
                             goal = self.server.get_tasklet(i.entity_id)

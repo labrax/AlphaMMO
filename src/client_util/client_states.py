@@ -145,9 +145,9 @@ class AlphaPlayMode:
     def render(self, dest):
         if not self.ready:
             return
-        # player position if in movement
-        ref_movement_x = 0
-        ref_movement_y = 0
+        # get the map center position in relation to the current player movement (this will avoid a flicker)
+        ref_movement_x = (self.map_center[0] - self.player_character.movement[0]) * SPRITE_LEN
+        ref_movement_y = (self.map_center[1] - self.player_character.movement[1]) * SPRITE_LEN
         if self.player_character.start_movement:
             this_time = time.time()
             # check the direction it is moving
@@ -158,11 +158,11 @@ class AlphaPlayMode:
             space_walked = (-SPRITE_LEN + self.player_character.speed_pixels *
                             (this_time - self.player_character.start_movement))
 
-            # if really walking, lets see how far we've got
+            # if really walking, lets see how far we've got and add the to reference center
             if diff[0]:
-                ref_movement_x = -diff[0] * space_walked
+                ref_movement_x += -diff[0] * space_walked
             if diff[1]:
-                ref_movement_y = -diff[1] * space_walked
+                ref_movement_y += -diff[1] * space_walked
 
         # clear temporary areas
         self.tiled_area.fill(transparent)
@@ -279,19 +279,21 @@ class AlphaPlayMode:
     def notify(self, message):
         if isinstance(message, pygame.event.EventType):
             event = message
-            if event.type == pygame.locals.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] - 1, self.player_character.pos[1]])
-                elif event.key == pygame.K_RIGHT:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] + 1, self.player_character.pos[1]])
-                elif event.key == pygame.K_UP:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] - 1])
-                elif event.key == pygame.K_DOWN:
-                    self.client_states.channel.push(
-                        [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] + 1])
+            # only try to move when another movement is already finished
+            if self.player_character and not self.player_character.start_movement:
+                if event.type == pygame.locals.KEYDOWN:
+                    if event.key == pygame.K_LEFT:
+                        self.client_states.channel.push(
+                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] - 1, self.player_character.pos[1]])
+                    elif event.key == pygame.K_RIGHT:
+                        self.client_states.channel.push(
+                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0] + 1, self.player_character.pos[1]])
+                    elif event.key == pygame.K_UP:
+                        self.client_states.channel.push(
+                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] - 1])
+                    elif event.key == pygame.K_DOWN:
+                        self.client_states.channel.push(
+                            [AlphaProtocol.REQUEST_MOVE, self.player_character.pos[0], self.player_character.pos[1] + 1])
         else:
             # print("States received", message)
             if message[0] == AlphaProtocol.SET_ENTITIES:
@@ -300,8 +302,12 @@ class AlphaPlayMode:
             elif message[0] == AlphaProtocol.REMOVE_ENTITIES:
                 for i in message[1]:
                     self.remove_entity(i)
+            elif message[0] == AlphaProtocol.REMOVE_ENTITY:
+                self.remove_entity(message[1])
             elif message[0] == AlphaProtocol.REPLACE_ENTITIES:
                 self.replace_entities(message[1])
+            elif message[0] == AlphaProtocol.SET_ENTITY:
+                self.add_entity(message[1])
             elif message[0] == AlphaProtocol.MOVING:
                 self.player_character.set_movement(message[1] - self.player_character.pos[0], message[2] - self.player_character.pos[1])
             elif message[0] == AlphaProtocol.RECEIVE_MAP:
@@ -324,6 +330,9 @@ class AlphaPlayMode:
             elif message[0] == AlphaProtocol.SPEAKING:
                 font = self.rl.get_font()
                 self.texts_on_screen.append((time.time(), font.render(message[2].name + ': ' + message[1], 1, FONT_COLOR), message[2]))
+            elif message[0] == AlphaClientProtocol.INTERNAL_STATUS and message[1] == AlphaClientProtocolValues.OFF:
+                self.client_states.mode = AlphaLoginMode(self.current_size, self.client_states)
+                self.client_states.logged = False
             else:
                 print("MESSAGE UNIDENTIFIED AT", self.__class__.__name__, message)
 
