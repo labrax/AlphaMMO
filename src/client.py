@@ -7,23 +7,29 @@ import time
 import pygame
 from pygame.locals import QUIT, VIDEORESIZE, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION
 
-from client_util.client_input_handler import ClientInput
 from client_util.client_screen import ClientScreen
-from client_util.client_states import ClientStates
-from client_util.client_socket import AlphaClientSocket
-from util.alpha_communication import AlphaCommunication, AlphaCommunicationChannel
+from client_util.client_states_tasklet import ClientStates
+from client_util.client_socket_tasklet import AlphaClientSocket
+from util.alpha_communication_tasklet import AlphaCommunication, AlphaCommunicationChannel
 from util.alpha_defines import FPS
 
 
 class AlphaGameClient:
+    """
+    The game client side for the game
+    AlphaGameClient.client_screen handles the information about the window
+    AlphaGameClient.client_states handles the information about the game states and rendering
+    AlphaGameClient.client_input handles the player input
+    AlphaGameClient.client_socket handles the communication to the server
+    AlphaGameClient.client_communication handles the communication between the objects
+    AlphaGameClient.running holds information if the tasklet should stop running
+    """
     def __init__(self):
         # initializes game components
         # screen
         self.client_screen = ClientScreen()
         # client states - will hold everything we got
         self.client_states = ClientStates()
-        # input
-        self.client_input = ClientInput()
         # dummy server
         self.client_socket = AlphaClientSocket(self.client_states)
         # self.client_server = ClientAsServer()  ###
@@ -40,23 +46,36 @@ class AlphaGameClient:
         # self.client_server.channel = channel_to_states  ###
 
         self.tasklets = None
+        self.running = True
 
     def start(self):
+        """
+        Starts the client:
+            - start the main loop
+            - start the socket
+            - start the internal communication
+            - start the client states loop
+        :return: nothing
+        """
         """
         starts all the tasklets for the game client
         - communication
         - main loop
         :return:
         """
-        self.tasklets = [stackless.tasklet(self.run)(), stackless.tasklet(self.client_socket.run)(),  #self.client_server.run
+        self.tasklets = [stackless.tasklet(self.run)(), stackless.tasklet(self.client_socket.run)(),
                          stackless.tasklet(self.client_communication.run)(), stackless.tasklet(self.client_states.run)()]
         stackless.run()
 
     def run(self):
-        running = True
-
+        """
+        Runs the handler. Ends when AlphaGameClient.running = False
+        If pygame sends a signal stops running
+        This method uses the stackless scheduler
+        :return: nothing
+        """
         old_time = time.time()
-        while running:
+        while self.running:
             stackless.schedule()
 
             events = pygame.event.get()
@@ -68,7 +87,7 @@ class AlphaGameClient:
                     self.client_screen.resize(event)
                     self.client_states.resize(event)
                 if event.type == QUIT:
-                    running = False
+                    self.running = False
 
             self.client_screen.render(self.client_states)
 

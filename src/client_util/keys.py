@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
+"""
+This file holds information about the pygame event, the asci value and the common name for the keys
+Also it holds information about special keys, such as enter, backspace and escape.
+"""
+
 import pygame
 
-# ('KeyASCII', 'ASCII', 'Common Name')
 keys = {
     pygame.K_SPACE: (' ', 'space'),
     pygame.K_EXCLAIM: ('!', 'exclaim'),

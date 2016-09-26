@@ -11,7 +11,14 @@ from util.alpha_exceptions import InvalidCharacters, InvalidLogin, InvalidPasswo
 
 
 class AlphaDatabase:
+    """
+    Holds the state about the database connection
+    AlphaDatabase.conn the connection to the database file
+    """
     def __init__(self):
+        """
+        Creates the tables if don't exist
+        """
         # create file if needed
         if not os.path.exists(DATABASE_FILE):
             if '/' in DATABASE_FILE:
@@ -35,12 +42,23 @@ class AlphaDatabase:
 
     @staticmethod
     def reset_db(areyousure=False):
+        """
+        Reset the database
+        :param areyousure: are you sure of reseting?
+        :return: nothing
+        """
         if areyousure:
             import subprocess
             subprocess.Popen('rm ' + DATABASE_FILE, shell=True)
             time.sleep(2)
 
     def login_account(self, account_id, password_passed):
+        """
+        Try to login
+        :param account_id: the account
+        :param password_passed: the password
+        :return: True if success else raises an exception
+        """
         if not account_id.isalnum():
             raise InvalidCharacters('Invalid characters at %s' % self.__class__.__name__)
         reply = self.conn.cursor().execute("SELECT * FROM users_login WHERE account_id == ? LIMIT 1", (account_id, )).fetchall()
@@ -55,6 +73,13 @@ class AlphaDatabase:
             raise InvalidPassword('Invalid login at %s' % self.__class__.__name__)
 
     def create_account(self, account_id, password, email):
+        """
+        Try to create an account
+        :param account_id: the account
+        :param password: the password
+        :param email: the e-mail
+        :return: True if success else raises an Exception
+        """
         if not account_id.isalnum():
             raise InvalidCharacters('Invalid characters at %s' % self.__class__.__name__)
         if len(account_id) > 16:
@@ -73,10 +98,11 @@ class AlphaDatabase:
     
     def create_character(self, account_id, character_name):
         """
-        We are supposing that the account is right, there is a working account_id with an active session
-        :param account_id:
-        :param character_name:
-        :return:
+        Try to create a character
+        It is supposed that the account is right, there is a working account_id with an active session
+        :param account_id: the account
+        :param character_name: the character name
+        :return: True if success else raises an Exception
         """
         if not character_name.isalnum():
             raise InvalidCharacters('Invalid characters at %s' % self.__class__.__name__)
@@ -87,29 +113,58 @@ class AlphaDatabase:
         return True
 
     def login_character(self, account_id, character_name):
+        """
+        Returns a character information
+        :param account_id: the account
+        :param character_name: the character name
+        :return: the character data
+        """
         character_data = self.conn.cursor().execute("SELECT * FROM characters WHERE account_id = ? AND character_name = ?", (account_id, character_name)).fetchall()
         self.conn.cursor().execute("UPDATE characters SET last_login = ? WHERE account_id = ? AND character_name = ?", (time.time(), account_id, character_name))
         self.conn.commit()
         return character_data
 
     def update_character(self, account_id, character_name, character_data):
+        """
+        Updates a character information
+        :param account_id: the account
+        :param character_name: the character name
+        :param character_data: the character data
+        :return: True on success
+        """
         self.conn.cursor().execute("UPDATE characters SET posx = ?, posy = ?, pexp = ?, max_hp = ?, curr_hp = ?, max_mp = ?, curr_mp = ?, skin = ?, hair = ?, helmet = ?, shirt = ?, trousers = ?, boots = ?, shield = ?, weapon = ? WHERE account_id = ? AND character_name = ?",
                                    character_data + [account_id, character_name])
         self.conn.commit()
         return True
 
     def delete_character(self, account_id, character_name):
+        """
+        Deletes a character from an account
+        :param account_id: the account
+        :param character_name: the character name
+        :return: True on success
+        """
         self.conn.cursor().execute("DELETE FROM characters WHERE account_id = ? AND character_name = ?", (account_id, character_name))
         self.conn.commit()
         return True
 
     @staticmethod
-    def entity_to_sql(entity):
+    def _entity_to_sql(entity):
+        # TODO: use pickle
+        """
+        Gets the character information and converts to a list to be used by sql
+        :param entity: the entity
+        :return: the list with information
+        """
         return [entity.pos[0], entity.pos[1], entity.exp, entity.hp[1], entity.hp[0], entity.mp[1], entity.mp[0],
                 entity.sprite.skin, entity.sprite.hair, entity.sprite.helmet, entity.sprite.shirt,
                 entity.sprite.trousers, entity.sprite.boots, entity.sprite.shield, entity.sprite.weapon]
 
     def __exit__(self):
+        """
+        Close the connection upon exit
+        :return: nothing
+        """
         self.conn.close()
 
 

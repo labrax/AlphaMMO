@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
+"""
+This file holds the information for the internal communication between the client states and socket
+"""
+
 from enum import Enum
 
 
 class AlphaClientProtocol(Enum):
+    """
+    The codes for the messages
+    """
     # both directions
     INTERNAL_STATUS = 10000
 
@@ -13,6 +20,9 @@ class AlphaClientProtocol(Enum):
 
 
 class AlphaClientProtocolValues(Enum):
+    """
+    The codes for the values
+    """
     # shutting down
     FORCE_SHUTDOWN = -111
 

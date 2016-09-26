@@ -3,7 +3,25 @@
 import time
 
 
-class Tile:
+class AlphaElement:
+    def load(self, resource_loader):
+        """
+        Load the sprites given tuples in (asset file name, X position, Y position) format
+        :param resource_loader: the class that load files and retrieve sprites
+        :return: nothing
+        """
+        pass
+
+
+class Tile(AlphaElement):
+    """
+    Stores information for a single tile on the game
+    Tile.tile is the tile sprite
+    Tile.decor_objects are the visual objects on it
+    Tile.items are the items on it
+    Tile.entities are the entities on it
+    Tile.can_walk if the tile is walkable
+    """
     def __init__(self):
         self.tile = None
         self.decor_objects = list()
@@ -12,9 +30,17 @@ class Tile:
         self.can_walk = True
 
     def __iter__(self):
+        """
+        Iterator for Tile sprites in the drawing order (first background, later foreground)
+        :return: a sprite iterator
+        """
         return self.iter()
 
     def iter(self):
+        """
+        Generator for Tile sprites
+        :return: the sprites
+        """
         if self.tile:
             yield self.tile
         for i in self.decor_objects:
@@ -31,7 +57,19 @@ class Tile:
             self.items[i] = resource_loader.get_sprite(self.items[i][0], self.items[i][1], self.items[i][2])
 
 
-class EntityVisual:
+class EntityVisual(AlphaElement):
+    """
+    Stores the information for an entity visual
+    EntityVisual.skin
+    EntityVisual.hair
+    EntityVisual.helmet
+    EntityVisual.shirt
+    EntityVisual.trousers
+    EntityVisual.boots
+    EntityVisual.shield
+    EntityVisual.weapon
+    EntityVisual.compiled
+    """
     def __init__(self):
         self.skin = 0
         self.hair = 0
@@ -49,8 +87,28 @@ class EntityVisual:
         #TODO: generate another compiled
         pass
 
+    def load(self, resource_loader):
+        pass
 
-class Entity:
+
+class Entity(AlphaElement):
+    """
+    Stores information for an entity in the game
+    Entity.entity_id is the identifier
+    Entity.speed_pixels is the speed
+    Entity.sprite is the entity sprite
+    Entity.exp is the entity experience
+    Entity.hp is (current health, maximum health)
+    Entity.mp is (current mana points, maximum mana points)
+    Entity.attack is the attack
+    Entity.defense is the defense
+    Entity.pos is the position
+    Entity.movement is the goal position for a movement
+    Entity.start_movement is the time the movement started
+    Entity.start_action is the time the action started
+    Entity.name is the entity name
+    Entity.entity_name_surface is a pre-rendered surface with the name
+    """
     def __init__(self):
         self.entity_id = -1
         self.speed_pixels = 16
@@ -73,6 +131,13 @@ class Entity:
         self.entity_name_surface = None
 
     def set_movement(self, delta_x, delta_y, immediate=False):
+        """
+        Starts the entity movement
+        :param delta_x: relative to current position
+        :param delta_y: relative to current position
+        :param immediate: or not
+        :return: nothing
+        """
         self.movement = (self.pos[0] + delta_x, self.pos[1] + delta_y)
         if immediate:
             self.start_movement = None
@@ -83,7 +148,15 @@ class Entity:
         self.sprite = resource_loader.get_sprite(self.sprite[0], self.sprite[1], self.sprite[2])
 
 
-class AlphaEffect:
+class AlphaEffect(AlphaElement):
+    """
+    Stores information for a visual effect in the game
+    AlphaEffect.pos is the position
+    AlphaEffect.sprites is a list of sprites
+    AlphaEffect.repeats is the amount of repetitions
+    AlphaEffect.duration is the duration for the sequence of sprites in the list
+    AlphaEffect.first_time is the starting time
+    """
     def __init__(self, pos, sprites, repeats, duration):
         self.pos = pos
         self.sprites = sprites
@@ -98,6 +171,10 @@ class AlphaEffect:
         self.sprites = sprites
 
     def get_sprite(self):
+        """
+        Get the current sprite in the effect animation
+        :return: None if the effect is over or the sprite if available
+        """
         curr_time = time.time()
         if curr_time - self.first_time > self.duration * self.repeats:
             return None

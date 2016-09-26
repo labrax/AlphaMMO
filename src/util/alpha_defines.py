@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 
+"""
+The constants for the game, both client and server
+"""
+
+# colors
 black = (0, 0, 0)
 gray = (94, 94, 94)
 white = (255, 255, 255)
 transparent = (0, 0, 0, 0)
 
 ASSETS_DIR = 'assets/'
+
 SPRITE_LEN = 16
+
 GRID_SIZE = (11, 11)
 GRID_MEMORY_SIZE = (15, 15)
 assert(int((GRID_MEMORY_SIZE[0] - GRID_SIZE[0]) % 2) == 0)
@@ -19,12 +26,14 @@ version = 'almost 0.00001a'
 START_WINDOW_NAME = 'AlphaMMO'
 WINDOW_TITLE = 'AlphaMMO Client ' + str(version)
 
+# font
 FONT_FILE = '04B_03__.TTF'
 FONT_SIZE = 32
 FONT_COLOR = (0, 0, 0)
 
 DRAW_PLAYERS_NAME = True
 
+#
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 1337
 SOCKET_BUFFER = 4096

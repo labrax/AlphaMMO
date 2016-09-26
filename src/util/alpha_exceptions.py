@@ -1,12 +1,22 @@
 # -*- coding: utf-8 -*-
 
+"""
+Exceptions for the game
+"""
+
 
 class AlphaException(Exception):
+    """
+    Game initiated exception
+    """
     def __init__(self, content):
         super(AlphaException, self).__init__('ERROR: ' + content)
 
 
 class DatabaseException(AlphaException):
+    """
+    Database specific error
+    """
     def __init__(self, content):
         super(DatabaseException, self).__init__(content)
 

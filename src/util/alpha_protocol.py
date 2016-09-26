@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+This file holds the information for the communication between the client and the server
+"""
+
+
 from util.alpha_entities import Entity, Tile, AlphaEffect
 from enum import Enum
 import os
@@ -7,6 +12,9 @@ import sys
 
 
 class AlphaProtocol(Enum):
+    """
+    The codes for the messages
+    """
     LOGIN = 0
     LOGOUT = -1
     STATUS = 1
@@ -118,14 +126,20 @@ client_accepts = dict(STATUS=True,  # login mode
                       )
 
 
-def check_valid(message, isserver):
-    def _wrap(message, isserver):
+def check_valid(message, is_server):
+    """
+    Check if a message is valid for a given receptor
+    :param message: the message
+    :param is_server: True if the message targets the server, False if the message targets the client
+    :return: True or False
+    """
+    def _wrap(message, is_server):
         try:
             ap = AlphaProtocol(message[0])
             message = message[1:]
-            if isserver and ap.name not in server_accepts:
+            if is_server and ap.name not in server_accepts:
                 return False
-            elif not isserver and ap.name not in client_accepts:
+            elif not is_server and ap.name not in client_accepts:
                 return False
             this_format = protocol_format[ap.name]
             i = -1
@@ -147,13 +161,20 @@ def check_valid(message, isserver):
             print(exc_type, e, fname, exc_tb.tb_lineno)
             return False
         return True
-    status = _wrap(message, isserver)
+    status = _wrap(message, is_server)
     # print('CHECKING MESSAGE', status, message)
     return status
 
 
-def retrieve_with_types(message, isserver):
-    assert isserver  # this function is not ready to handle lists at the client!
+def retrieve_with_types(message, is_server):
+    """
+    Returns a message with excepted formating if valid
+    :param message: the message
+    :param is_server: True if the message targets the server, False if the message targets the client
+    :return: a list with the information of raises exception if invalid
+    """
+    assert is_server  # this function is not ready to handle lists at the client!
+
     def _wrap(message):
         try:
             ap = message[0]

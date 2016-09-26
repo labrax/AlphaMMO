@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+"""
+The constants for the server
+"""
 
 DATABASE_FILE = 'server.db'
 

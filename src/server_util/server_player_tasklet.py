@@ -11,16 +11,27 @@ from util.alpha_protocol import AlphaProtocol, retrieve_with_types
 
 
 class AlphaServerPlayerTasklet(AlphaServerTasklet):
+    """
+    Handles the communication between the server and a player
+    AlphaServerPlayerTasklet.client_socket is the socket with the player
+    AlphaServerPlayerTasklet.address is the player address
+    AlphaServerPlayerTasklet.socket_buffer is the buffer
+    AlphaServerPlayerTasklet.session_id is the client session id
+    AlphaServerPlayerTasklet.ping is the delay between server and player
+    AlphaServerPlayerTasklet.session_token is the authentication token
+    AlphaServerPlayerTasklet.messages_handlers is a relation of the protocol message identifier to the method
+    """
     def __init__(self, server, client_socket, address):
         super(AlphaServerPlayerTasklet, self).__init__(server)
         self.client_socket = client_socket
         self.address = address
-        self.socket_buffer = ''.encode()
+        self.socket_buffer = b''
         self.session_id = -1
         self.ping = 0.1  # todo: implement
         self.session_token = None  # todo: implement
-        self.server = server
-        self.messages_handlers = {AlphaProtocol.REGISTER: self.msg_register, AlphaProtocol.LOGIN: self.msg_login, AlphaProtocol.REQUEST_MOVE: self.msg_rqst_move}
+        self.messages_handlers = {AlphaProtocol.REGISTER: self.msg_register, AlphaProtocol.LOGIN: self.msg_login,
+                                  AlphaProtocol.REQUEST_MOVE: self.msg_rqst_move,
+                                  AlphaProtocol.REQUEST_ACTION: self.msg_rqst_action}
 
     def iterate(self):
         super(AlphaServerPlayerTasklet, self).iterate()
@@ -50,6 +61,11 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
         stackless.schedule_remove()
 
     def msg_register(self, message):
+        """
+        Handles the AlphaProtocol.REGISTER message
+        :param message: the message
+        :return: nothing
+        """
         user = message[1]
         passwd = message[2]
         email = message[3]
@@ -61,6 +77,11 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             self.channel.push([AlphaProtocol.SERVER_MESSAGE, e.args[0]])
 
     def msg_login(self, message):
+        """
+        Handles the AlphaProtocol.LOGIN message
+        :param message: the message
+        :return: nothing
+        """
         user = message[1]
         passwd = message[2]
         try:
@@ -94,6 +115,11 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             self.channel.push([AlphaProtocol.STATUS, -2, self.session_id])
 
     def msg_rqst_move(self, message):
+        """
+        Handles the AlphaProtocol.REQUEST_MOVE message
+        :param message: the message
+        :return: nothing
+        """
         player_x = int(message[1])
         player_y = int(message[2])
         if -1 <= player_x - self.entity.pos[0] <= 1 and -1 <= player_y - self.entity.pos[
@@ -117,6 +143,11 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
             self.channel.push([AlphaProtocol.RECEIVE_MAP, self.entity.pos[0], self.entity.pos[1], ret])
 
     def msg_rqst_action(self, message):
+        """
+        Handles the AlphaProtocol.REQUEST_ACTION message
+        :param message: the message
+        :return: nothing
+        """
         self.channel.push([AlphaProtocol.ACTION, 1])
         effect = self.server.server_entities.create_effect((message[2], message[3]))
 
@@ -127,7 +158,7 @@ class AlphaServerPlayerTasklet(AlphaServerTasklet):
                 if goal:
                     goal.channel.push([AlphaProtocol.EFFECT, effect, message[2], message[3]])
 
-    def to_server(self, message):
+    def notify(self, message):
         print(self.__class__.__name__, "SERVER RAW", self.session_id, message)
         try:
             message = retrieve_with_types(message, True)

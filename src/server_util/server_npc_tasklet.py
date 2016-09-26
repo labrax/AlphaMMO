@@ -9,10 +9,13 @@ from util.alpha_protocol import AlphaProtocol
 
 
 class AlphaServerNPCTasklet(AlphaServerTasklet):
+    """
+    Handles the actions for a NPC
+    AlphaServerNPCTasklet.entity is the entity data
+    """
     def __init__(self, server, entity):
         super(AlphaServerNPCTasklet, self).__init__(server)
         self.entity = entity
-        self.active = True
 
     def iterate(self):
         super(AlphaServerNPCTasklet, self).iterate()
@@ -53,3 +56,6 @@ class AlphaServerNPCTasklet(AlphaServerTasklet):
                                 goal.channel.push(
                                     [AlphaProtocol.SET_ENTITIES, [self.entity]])
             stackless.schedule()
+
+    def notify(self, message):
+        pass

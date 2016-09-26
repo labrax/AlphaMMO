@@ -17,10 +17,20 @@ from server_util.server_npc_tasklet import AlphaServerNPCTasklet
 from server_util.server_player_tasklet import AlphaServerPlayerTasklet
 from server_util.server_database import AlphaDatabase
 
-from server_util.server_entities import AlphaServerEntities
+from server_util.server_entities_factory import AlphaServerEntitiesFactory
 
 
 class AlphaServer:
+    """
+    The game server side for the game
+    AlphaServer.server_socket is the listener socket
+    AlphaServer.server_database is the database
+    AlphaServer.server_map is the map
+    AlphaServer.server_entities is the entities factory
+    AlphaServer.running holds information if the tasklet should stop running
+    AlphaServer.tasklets_objects is the relation of tasklets
+    AlphaServer.tasklets_entities if the relation of entities to tasklets
+    """
     __instance__ = None
 
     def __init__(self):
@@ -35,7 +45,7 @@ class AlphaServer:
         self.server_database = AlphaDatabase()
 
         self.server_map = AlphaServerMap()
-        self.server_entities = AlphaServerEntities()
+        self.server_entities = AlphaServerEntitiesFactory()
 
         self.running = False
 
@@ -43,10 +53,22 @@ class AlphaServer:
         self.tasklets_entities = dict()
 
     def start(self):
+        """
+        Starts the server:
+            - starts the map
+            - start the npcs
+            - put the socket to listen
+            - start stackless
+        :return: nothing
+        """
         # server setup
         self.server_map.start()
 
         def start_npc():
+            """
+            Starts a random NPC
+            :return: nothing
+            """
             i = self.server_entities.create_random_npc()
             self.server_map.set_entity(i)
             tasklet_object = AlphaServerNPCTasklet(self, i)
@@ -64,6 +86,11 @@ class AlphaServer:
         stackless.run()
 
     def run(self):
+        """
+        Runs the handler. Ends when AlphaServer.running = False
+        This method uses the stackless scheduler
+        :return: nothing
+        """
         print("Server is running.")
         while self.running:
             last_time = time.time()

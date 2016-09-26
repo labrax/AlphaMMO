@@ -5,7 +5,7 @@ import ssl
 
 import stackless
 
-from util.alpha_communication import AlphaCommunicationChannel
+from util.alpha_communication_tasklet import AlphaCommunicationChannel
 from util.alpha_defines import SERVER_IP, SERVER_PORT, SOCKET_BUFFER, SOCKET_TIMEOUT
 from client_util.client_internal_protocol import AlphaClientProtocol, AlphaClientProtocolValues
 from util.alpha_protocol import AlphaProtocol, check_valid
@@ -13,6 +13,14 @@ from util.alpha_socket_comm import send_receive
 
 
 class AlphaClientSocket(AlphaCommunicationChannel):
+    """
+    Class to handle the different states in the game
+    AlphaClientSocket.server_socket is the socket to the server
+    AlphaClientSocket.socket_buffer is the buffer for the communication
+    AlphaClientSocket.running holds information if the tasklet should stop running
+    AlphaClientSocket.state is the state of the communication
+    AlphaClientSocket.client_states is the reference to the client states object
+    """
     def __init__(self, client_states):
         super(AlphaClientSocket, self).__init__(None)
         self.server_socket = None
@@ -23,6 +31,13 @@ class AlphaClientSocket(AlphaCommunicationChannel):
         self.client_states = client_states
 
     def start(self):
+        """
+        Starts the communication:
+            - create the socket
+            - encapsulate with SSL
+            - if on error notify and cancel
+        :return: nothing
+        """
         print("STARTING CONNECTION")
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.settimeout(SOCKET_TIMEOUT)
@@ -37,8 +52,12 @@ class AlphaClientSocket(AlphaCommunicationChannel):
             self.push([AlphaProtocol.REQUEST_RECONNECT, self.client_states.session_id])
         self.state = AlphaClientProtocolValues.CONNECTED
 
-    # message to client
     def to_client(self, message):
+        """
+        Receiving a message from the server send it to the client states object if it is valid
+        :param message: the message
+        :return: nothing
+        """
         print("To client", message)
         if check_valid(message, False):
             self.client_states.notify(message)
@@ -46,10 +65,19 @@ class AlphaClientSocket(AlphaCommunicationChannel):
             print('Client received from server invalid message', message)
 
     def to_client_internal(self, message):
+        """
+        Send an internal message to the client states object
+        :param message: the message
+        :return: nothing
+        """
         self.client_states.notify(message)
 
-    # message to server
     def notify(self, message):
+        """
+        Receiving a message from the client states object and send it to the server if it is valid
+        :param message: the message
+        :return: nothing
+        """
         #print("Socket received", message)
         if message[0] == AlphaClientProtocol.TRY_LOGIN:
             # todo: implement
@@ -67,7 +95,16 @@ class AlphaClientSocket(AlphaCommunicationChannel):
             else:
                 print('Client to server invalid message', message)
 
-    def on_error(self, exc, e, fnma, lineno, failed=False):
+    def on_error(self, exc, e, fnma, lineno, failed=False):  # TODO: put somewhere else?
+        """
+        If an error occurred print the information and update state
+        :param exc: the object on error
+        :param e: the error
+        :param fnma: the function
+        :param lineno: the line number
+        :param failed: if the socket failed and the connection is over
+        :return: nothing
+        """
         # something went wrong, player is now offline - needs to re-establish connection
         print(exc, e, fnma, lineno)
         if failed:
@@ -77,6 +114,11 @@ class AlphaClientSocket(AlphaCommunicationChannel):
         self.to_client_internal([AlphaClientProtocol.INTERNAL_STATUS, self.state])
 
     def run(self):
+        """
+        Runs the handler. Ends when AlphaClientSocket.running = False
+        This method uses the stackless scheduler
+        :return: nothing
+        """
         while self.running:
             if not self.state == AlphaClientProtocolValues.OFF:
                 if self.state == AlphaClientProtocolValues.TRYING_CONNECTION:
