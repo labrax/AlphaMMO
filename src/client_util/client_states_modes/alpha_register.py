@@ -3,6 +3,7 @@
 
 import pygame
 
+from client_util.client_states_modes.alpha_mode import AlphaMode
 import client_util.client_states_modes.alpha_start
 import client_util.client_states_modes.alpha_login
 
@@ -11,10 +12,13 @@ from client_util.client_internal_protocol import AlphaClientProtocol
 from util.alpha_protocol import AlphaProtocol
 
 
-class AlphaRegisterMode:
+class AlphaRegisterMode(AlphaMode):
+    """
+    Class for the register screen
+    AlphaRegisterMode.aw is the register window
+    """
     def __init__(self, screen_size, client_states):
-        self.current_size = screen_size
-        self.client_states = client_states
+        super(AlphaRegisterMode, self).__init__(screen_size, client_states)
         # screen objects
         self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 6),
                               "REGISTER")
@@ -64,6 +68,14 @@ class AlphaRegisterMode:
                 print("Invalid message at", self.__class__.__name__, message)
 
     def try_register(self, user_ui, passwd_ui, verify_passwd, email):
+        """
+        Try to register on the server
+        :param user_ui: the UI for the account
+        :param passwd_ui: the UI for the password
+        :param verify_passwd: the UI for the password verification
+        :param email: the UI for the player's email
+        :return: nothing
+        """
         if passwd_ui.text == verify_passwd.text:
             self.client_states.channel.push([AlphaClientProtocol.TRY_REGISTER, user_ui.text, passwd_ui.text, email.text])
         else:

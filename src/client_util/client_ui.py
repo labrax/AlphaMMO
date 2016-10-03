@@ -8,7 +8,15 @@ from client_util.client_ui_defines import FONT_COLOR, WHITE_BORDER, INTERNAL_COL
 from client_util.keys import keys, keys_special
 
 
-class AlphaGameUI:
+class AlphaGameUI(object):
+    """
+    Class to model the UI elements
+    AlphaGameUI.id is the element identification
+    AlphaGameUI.pos is the element position at its container
+    AlphaGameUI.size is the element dimension
+    AlphaGameUI.surface is the pre-rendered surface for the element
+    AlphaGameUI.visible if the element is visible or not
+    """
     curr_id = 1
 
     @classmethod
@@ -25,16 +33,38 @@ class AlphaGameUI:
         self.visible = False
 
     def render(self, dest):
+        """
+        Renders the UI element
+        :param dest: the surface destination
+        :return: nothing
+        """
         dest.blit(self.surface, self.pos)
 
     def update(self):
+        """
+        Updates the surface contents, must be called when an UI element changes
+        :return: nothing
+        """
         pass
 
     def notify(self, event):
+        """
+        Notifies the UI element of an event, such as key-press
+        :param event: the event
+        :return: nothing
+        """
         pass
 
 
 class AlphaWindow(AlphaGameUI):
+    """
+    Class to render a window
+    AlphaWindow.title_name the windows title
+    AlphaWindow.components the components inside the window
+    AlphaWindow.selected the component that is selected
+    AlphaWindow.enter the event when enter is pressed
+    AlphaWindow.escape the event when escape is pressed
+    """
     def __init__(self, pos, size, title_name):
         super(AlphaWindow, self).__init__(pos, size)
         self.title_name = title_name
@@ -58,6 +88,11 @@ class AlphaWindow(AlphaGameUI):
             i.render(self.surface)
 
     def add_component(self, component):
+        """
+        Add an component to the window
+        :param component: the component
+        :return: nothing
+        """
         # (3, 29) is a good position after the screen title
         if type(component) == list:
             for i in component:
@@ -107,6 +142,10 @@ class AlphaWindow(AlphaGameUI):
 
 
 class AlphaLabel(AlphaGameUI):
+    """
+    Class to render a label
+    AlphaLabel.text is the content
+    """
     def __init__(self, pos, size, text):
         super(AlphaLabel, self).__init__(pos, size)
         self.text = text
@@ -118,6 +157,10 @@ class AlphaLabel(AlphaGameUI):
 
 
 class AlphaEditBox(AlphaLabel):
+    """
+    Class to render an editbox
+    AlphaEditBox.password True if it contains a password, False otherwise
+    """
     def __init__(self, pos, size, text, password=False):
         self.password = password
         super(AlphaEditBox, self).__init__(pos, size, text)
@@ -155,6 +198,11 @@ class AlphaEditBox(AlphaLabel):
 
 
 class AlphaButton(AlphaLabel):
+    """
+    Class to render a button
+    AlphaButton.callback is the function to be called upon click
+    AlphaButton.callback_args are the arguments to send to the callback function
+    """
     def __init__(self, pos, size, text, callback, callback_args=None):
         if not callback_args:
             self.callback_args = ()

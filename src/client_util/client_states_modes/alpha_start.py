@@ -3,6 +3,7 @@
 
 import pygame
 
+from client_util.client_states_modes.alpha_mode import AlphaMode
 import client_util.client_states_modes.alpha_register
 import client_util.client_states_modes.alpha_login
 
@@ -10,10 +11,13 @@ from client_util.client_ui import AlphaWindow, AlphaButton
 from util.alpha_defines import START_WINDOW_NAME
 
 
-class AlphaStartMode:
+class AlphaStartMode(AlphaMode):
+    """
+    Class for the initial game screen
+    AlphaStartMode.aw is the start window
+    """
     def __init__(self, screen_size, client_states):
-        self.current_size = screen_size
-        self.client_states = client_states
+        super(AlphaStartMode, self).__init__(screen_size, client_states)
         # screen objects
         self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 2),
                               START_WINDOW_NAME)
@@ -43,7 +47,15 @@ class AlphaStartMode:
                 self.aw.update()
 
     def register_window(self):
+        """
+        Loads the register window
+        :return: nothing
+        """
         self.client_states.mode = client_util.client_states_modes.alpha_register.AlphaRegisterMode(self.current_size, self.client_states)
 
     def login_window(self):
+        """
+        Loads the login window
+        :return: nothing
+        """
         self.client_states.mode = client_util.client_states_modes.alpha_login.AlphaLoginMode(self.current_size, self.client_states)

@@ -4,6 +4,7 @@
 import time
 import pygame
 
+from client_util.client_states_modes.alpha_mode import AlphaMode
 import client_util.client_states_modes.alpha_login
 
 from util.alpha_defines import GRID_MEMORY_SIZE, SPRITE_LEN, SPRITE_LEN as TILE_SIZE, FONT_COLOR, GRID_SIZE, DRAW_PLAYERS_NAME, transparent
@@ -15,10 +16,30 @@ from util.alpha_protocol import AlphaProtocol
 from client_util.client_internal_protocol import AlphaClientProtocol, AlphaClientProtocolValues
 
 
-class AlphaPlayMode:
+class AlphaPlayMode(AlphaMode):
+    """
+    Class for the playing screen
+    AlphaPlayMode.player_character is the player character information
+    AlphaPlayMode.tiled_memory is the game grid information
+    AlphaPlayMode.map_center is the position of the center of the map
+    AlphaPlayMode.entities is the dictionary of entities information
+    AlphaPlayMode.effects is the dictionary of effects information
+    AlphaPlayMode.key check which keys are pressed
+    AlphaPlayMode.waiting_movement to check if it is waiting for a reply from the server related to movement
+    AlphaPlayMode.waiting_action to check if it is waiting for a reply from the server related to action
+    AlphaPlayMode.rl is the resource loader for the game sprites
+    AlphaPlayMode.running if the play screen is executing
+    AlphaPlayMode.ready_map if the map is ready to display
+    AlphaPlayMode.ready_player if the player character is ready to display
+    AlphaPlayMode.ready if the game is ready to display
+    AlphaPlayMode.texts_on_screen is the list of texts on screen
+    AlphaPlayMode.tiled_area is the draw information about the tiles on the game
+    AlphaPlayMode.players_and_texts draws information about the players and texts
+    AlphaPlayMode.size is the screen size
+    AlphaPlayMode.pos is the position to draw the elements the box inside the screen
+    """
     def __init__(self, screen_size, client_states):
-        self.client_states = client_states
-        self.current_size = screen_size
+        super(AlphaPlayMode, self).__init__(screen_size, client_states)
         # player and game information
         self.player_character = None
         self.tiled_memory = [[Tile() for __ in range(GRID_MEMORY_SIZE[0])] for _ in range(GRID_MEMORY_SIZE[1])]
@@ -42,7 +63,7 @@ class AlphaPlayMode:
 
         # initializes grid memory
         self.tiled_area = pygame.Surface((GRID_SIZE[0] * SPRITE_LEN, GRID_SIZE[1] * SPRITE_LEN), pygame.SRCALPHA)
-        self.players_and_texts = None # TODO
+        self.players_and_texts = None
         self.size = None
         self.pos = None
         self.prepare()

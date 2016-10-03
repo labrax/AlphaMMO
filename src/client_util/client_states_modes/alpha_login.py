@@ -3,6 +3,7 @@
 
 import pygame
 
+from client_util.client_states_modes.alpha_mode import AlphaMode
 import client_util.client_states_modes.alpha_start
 import client_util.client_states_modes.alpha_play
 
@@ -11,10 +12,13 @@ from client_util.client_internal_protocol import AlphaClientProtocol
 from util.alpha_protocol import AlphaProtocol
 
 
-class AlphaLoginMode:
+class AlphaLoginMode(AlphaMode):
+    """
+    Class for the login screen
+    AlphaLoginMode.aw is the login window
+    """
     def __init__(self, screen_size, client_states):
-        self.current_size = screen_size
-        self.client_states = client_states
+        super(AlphaLoginMode, self).__init__(screen_size, client_states)
         # screen objects
         self.aw = AlphaWindow((self.current_size[0] / 2 - 150, self.current_size[1] / 2 - 29 * 2), (300, 29 * 4),
                               "LOGIN")
@@ -65,7 +69,17 @@ class AlphaLoginMode:
                 print("Invalid message at", self.__class__.__name__, message)
 
     def try_login(self, user_ui, passwd_ui):
+        """
+        Try to login on the server
+        :param user_ui: the UI for the account edit box
+        :param passwd_ui: the UI for the password edit box
+        :return: nothing
+        """
         self.client_states.channel.push([AlphaClientProtocol.TRY_LOGIN, user_ui.text, passwd_ui.text])
 
     def cancel(self):
+        """
+        Cancel the login window, returns to start screen
+        :return: nothing
+        """
         self.client_states.mode = client_util.client_states_modes.alpha_start.AlphaStartMode(self.current_size, self.client_states)

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from queue import Queue
+try:
+    from queue import Queue
+except ImportError:
+    from Queue import Queue
 import stackless
 
 
-class AlphaCommunicationMember:
+class AlphaCommunicationMember(object):
     """
     This is a member of the communication
     It will get notified of messages
@@ -18,7 +21,7 @@ class AlphaCommunicationMember:
         pass
 
 
-class AlphaCommunicationChannel:
+class AlphaCommunicationChannel(object):
     """
     This is a communication channel to a destination (AlphaCommunicationMember)
     """

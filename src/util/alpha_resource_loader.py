@@ -6,7 +6,7 @@ from util.alpha_defines import ASSETS_DIR, SPRITE_LEN, FONT_FILE, FONT_SIZE
 from util.alpha_exceptions import AlphaException
 
 
-class AlphaSprite:
+class AlphaSprite(object):
     """
     Stores information for a sprite
     """
