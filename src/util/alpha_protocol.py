@@ -149,8 +149,9 @@ def check_valid(message, is_server):
                     break
                 if this_format[f] == list:
                     for e in message[i]:
-                        if type(e) not in this_format[f+1]:
-                            return False
+                        for element in this_format[f+1]:
+                            if not isinstance(e, element):
+                                return False
                     f += 1
                     continue
                 elif not isinstance(message[i], this_format[f]):
