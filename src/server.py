@@ -107,7 +107,12 @@ class AlphaServer:
                     tasklet_object = AlphaServerPlayerTasklet(self, client_socket, address)
                     self.tasklets_objects.append(tasklet_object)
                     tasklet_object.tasklet = stackless.tasklet(tasklet_object.run)()
-                except:
+                except Exception as e:
+                    import sys
+                    import os
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print(exc_type, e, fname, exc_tb.tb_lineno)
                     print("Client failed.")
 
             stackless.schedule()
