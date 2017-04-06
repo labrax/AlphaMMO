@@ -12,7 +12,8 @@ Be sure that the client and server are using the same version of Stackless Pytho
 sudo apt-get install libssl-dev openssl libfreetype6-dev
 sudo apt-get install build-essential zlib1g-dev (or zlib-devel)
 sudo apt-get install libreadline-dev
-sudo apt-get build-dep python 2.7
+sudo apt-get install python-dev
+sudo apt-get build-dep python2.7 python-pygame
 ```
 - Download Stackless from https://bitbucket.org/stackless-dev/stackless/wiki/Download
 - Configure and compile Stackless
@@ -23,7 +24,7 @@ sudo make install
 ```
 - Install packages on Stackless:
 ```
-stackless -m pip install pygame pickle pyopenssl sqlite3 stackless-python
+stackless -m pip install pygame pyopenssl stackless-python
 ```
 
 If you use Stackless Python 2.7 you'll need to install more packages:
@@ -82,14 +83,14 @@ Client States --> EVERYTHING DRAWABLE --> Client Screen
 
 ## Generating the server certificate
 
-Follow this sequence of commands on Bash::
+Follow this sequence of commands on Bash:
 ```
 openssl genrsa -des3 -out server.orig.key 2048
 openssl rsa -in server.orig.key -out server.key
 openssl req -new -key server.key -out server.csr
 openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
 ```
-Be sure to add the files on both server and client.
+Place the file .crt on  server and client.
 
 
 ## How is the communication between the components and client-server communication?
